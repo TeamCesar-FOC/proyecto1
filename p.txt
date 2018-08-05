@@ -1,3 +1,8 @@
-config --global user.email "üsuario@ejemplo.com"
-config --global user.name "uauraio"
-asd
+1. loging por consola
+  config --global user.email "üsuario@ejemplo.com"
+  config --global user.name "usuario"
+2. en atom "ctrl+mayus+p" para abrir la vaina de comandos
+3. en la vaina de comandos introducir "github clone" te peroira la url del proyecto y la carpeta local
+4. para gestionar commit "ctrl+mayus+9"
+5. al hacer commit te pedira loggin en atom, introducirle usuario y contrase;a
+6. commit, push, pull, etc like a pro
