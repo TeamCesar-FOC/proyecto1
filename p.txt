@@ -1,0 +1,3 @@
+config --global user.email "cesar_aramendi@hotmail.com"
+config --global user.name "cesaramendi"
+asd
