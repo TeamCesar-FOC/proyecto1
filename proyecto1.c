@@ -6,12 +6,13 @@
 
 // Recibe un arreglo y retorna el subarreglo definido por el intervalo entre begin y end
 char* slice(char arr[MAX_ARRAY], int begin, int end) {
+    int i, j=0;
   char* arrOut = (char *)malloc(sizeof(char) * MAX_ARRAY); //Array de char de tamaño MAX_ARRAY
   if (end > MAX_ARRAY) {
     printf("Valor end mayor a MAX_ARRAY");
     return arr;
   }
-  for (int i = begin, j = 0; i<end; i++, j++){
+  for (i = begin,j = 0; i<end; i++, j++){
     arrOut[j]=arr[i];
   }
   return arrOut;
@@ -50,7 +51,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       coefs[nVarCompleted] = 1;
       nVarCompleted++;
     } else if (!isdigit(arr[i])) {
-      coefs[nVarCompleted] = oper == '-' ? -1 : 1; 
+      coefs[nVarCompleted] = oper == '-' ? -1 : 1;
       nVarCompleted++;
       oper = 'n';
     }
@@ -84,9 +85,10 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
 
 // Recibe el numero de variables y retorna un arreglo con el nombre de cada variable que el programa usará
 char* getVarsArray (int nVar) {
+    int i;
   char* arrOut = (char *)malloc(sizeof(char) * nVar);
   char var = 'x';
-  for (int i = 0; i < nVar; i++) {
+  for (i = 0; i < nVar; i++) {
     arrOut[i] = var + i;
     if(var + i == 'z'){
       var = 'p' - i - 1;
@@ -98,30 +100,33 @@ char* getVarsArray (int nVar) {
 // Recibe un arreglo de coeficientes y los imprime con su respectivo nombre de variable
 void printCoefs(float* coefs, int nVar) {
   char var = 'x';
-  for (int i = 0; i < nVar; i++) {// Imprimir variables de referencia
+  int i;
+  for (i = 0; i < nVar; i++) {// Imprimir variables de referencia
     printf("%c\t", var + i );
     if(var + i == 'z'){
       var = 'p' - i - 1;
     }
   }
   printf("\n");
-  for (int i = 0; i<nVar; i++) {
+  for (i = 0; i<nVar; i++) {
     printf("%g\t", coefs[i]);
-  } 
+  }
   printf("\n");
 }
 // Imprimir restricciones (Subjeto a:)
 void printSa(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest) {
+    int i,j;
   char var = 'x';
-  for (int i = 0; i < nVar; i++) {// Imprimir variables de referencia
+
+  for (i = 0; i < nVar; i++) {// Imprimir variables de referencia
     printf("%c\t", var + i );
     if(var + i == 'z'){
       var = 'p' - i - 1;
     }
   }
   printf("\n");
-  for(int i = 0; i < nRestrics; i++) {
-    for(int j = 0; j < nVar; j++) {
+  for(i = 0; i < nRestrics; i++) {
+    for(j = 0; j < nVar; j++) {
       printf("%g\t", matrix[i][j]);
     }
     printf(" %c %g\n", ops[i], derRest[i]);
@@ -129,9 +134,10 @@ void printSa(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float*
 }
 
 void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo) {
+  int i,j;
   char var = 'x';
   printf("\t");
-  for (int i = 0; i < nVar; i++) {  // Imprimir variables de referencia
+  for (i = 0; i < nVar; i++) {  // Imprimir variables de referencia
     printf("%c\t", var + i );
     if(var + i == 'z'){
       var = 'p' - i - 1;
@@ -140,14 +146,14 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   printf("\n");
 
   printf("%s\t",tipo==1? "max":"min");  // Imprimir max/min
-  for (int i = 0; i < nVar; i++) {       // Imprimir coeficientes de la funcion objetivo
+  for (i = 0; i < nVar; i++) {       // Imprimir coeficientes de la funcion objetivo
     printf("%g\t", fObj[i]);
   }
   printf("\n");
 
-  for (int i = 0; i < nRestrics; i++) {
+  for (i = 0; i < nRestrics; i++) {
     printf("\t");
-    for (int j = 0; j < nVar; j++) {
+    for (j = 0; j < nVar; j++) {
       printf("%g\t", matrix[i][j]);   // Coeficientes de restriccion i
     }
     printf(" %c %g\n", ops[i], derRest[i]);   //Operador y lado derecho de restriccion i
@@ -156,7 +162,7 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
 
 
 int main() {
-  int nVar = 0;
+  int nVar,i = 0;
   char funcObjetivo[MAX_ARRAY];
   int tipo = 0;
   int nRestrics = 0;
@@ -183,10 +189,10 @@ int main() {
   char restOp[nRestrics];  // Operador de la restricción
   float* restDerArray = (float *)malloc(sizeof(float) * nRestrics); // Lado derecho de las restricciones
   // Matriz de coeficientes de las restricciones
-  float** restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics); 
-  for(int i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
-  
-  for(int i = 0; i < nRestrics; i++){
+  float** restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
+  for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
+
+  for(i = 0; i < nRestrics; i++){
     printf("Introduzca restricción %i. Utilice ==, >=, <=\n", i+1);
      if (i == 1) printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
     scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
@@ -195,7 +201,7 @@ int main() {
   printf("\n");
   printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
 
-  /* C -> fObjetivoCoefsArray 
+  /* C -> fObjetivoCoefsArray
    * X -> varsArray
    * A -> restricsMatrix
    * b -> restDerArray
@@ -207,11 +213,11 @@ int main() {
   }
 
   // Convertimos a forma estandar
-  
 
 
 
-  for(int i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
+
+  for(i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
   free(restricsMatrix);
   free(restDerArray);
   free(fObjetivoCoefsArray);
