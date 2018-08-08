@@ -133,25 +133,127 @@ void printSa(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float*
   }
 }
 
+void invermat(int n, float **a, float **ainv, float determ) {
+
+	// Algoritmo para la eliminación simple de Gauss
+
+	int i, j, k;
+
+	float factor,sum;
+	//float **L, *D, *X;
+	float* D = (float *)malloc(sizeof(float) * n);
+	float* X = (float *)malloc(sizeof(float) * n);
+
+    float** L = (float **)malloc(sizeof(float *) * n);
+    for(i = 0; i < n; i++) L[i] = (float *)malloc(sizeof(float) * n);
+
+		for (k = 0; k < n - 1; k++) {
+			for (i = k+1; i < n;  i++) {
+				factor = a[i][k]/a[k][k];
+				for (j = k+1; j < n + 1; j++) {
+					a[i][j] = a[i][j] - factor * a[k][j];
+				}
+			}
+		}
+
+	// Cálculo del determinante
+	determ = 1.;
+	for (i = 0; i < n; i++) {
+		determ = determ * a[i][i];
+	}
+
+	if (determ != 0) {
+
+		// Rutina para determinar las matrices L (inferior) y U (superior) de la
+		// descomposición LU
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < n; j++) {
+				if (i > j) {
+					L[i][j] = a[i][j]/a[j][j];
+					a[i][j] = 0;
+				}
+			}
+		}
+
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < n; j++) {
+				L[j][j] = 1;
+			}
+		}
+
+		// Implementación de la rutina para el cálculo de la inversa
+		for (k = 0; k < n; k++) {
+
+			// Esta rutina inicializa los L[i][n] para ser utilizados con la matriz L
+			for (i = 0; i < n; i++) {
+				if (i == k) L[i][n] = 1;
+				else  L[i][n] = 0;
+			}
+
+			// Esta función implementa la sustitución hacia adelante con la matriz L y los L[i][n]
+			// que produce la rutina anterior
+			//float sum;
+
+			D[0] = L[0][n];
+				for (i = 1; i < n; i++) {
+				sum = 0;
+				for (j = 0; j < i; j++) {
+					sum = sum + L[i][j]*D[j];
+				}
+				D[i] = L[i][n] - sum;
+			}
+
+			// Esta rutina asigna los D[i] que produce forward para ser utilizados con la matriz U
+			for (i = 0; i < n; i++) {
+				a[i][n] = D[i];
+			}
+
+			// Rutina que aplica la sustitución hacia atras
+			X[n-1] = a[n-1][n]/a[n-1][n-1];
+
+			// Determinación de las raíces restantes
+			for (i = n - 2; i > -1; i--) {
+				sum = 0;
+				for (j = i+1; j < n; j++) {
+					sum = sum + a[i][j]*X[j];
+				}
+				X[i] = (a[i][n] - sum)/a[i][i];
+			}
+
+			// Esta rutina asigna los X[i] que produce Sustituir como los elementos de la matriz inversa
+			for (i = 0; i < n; i++) {
+				ainv[i][k] = X[i];
+			}
+		}   // llave de cierre del for para k
+	}   // cierre del if
+
+	free(L);
+	free(X);
+	free(D);
+}//ciere de inverir matriz
+
+
 void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
   int i,j;
-  float b[nRestrics],a[nRestrics][nVar+nRestrics], c[nVar+nRestrics]; //pag5
-
+  float b[nRestrics],A[nRestrics][nVar+nRestrics], C[nVar+nRestrics];//pag5
+  float B[nVar][nVar],BI[nVar][nVar];//pag5
+  ///////// llenado  b,A,C//////////////
   for (i = 0;i < nRestrics;i++) {
     b[i]=derRest[i];
-    c[i]=fObj[i];
+    C[i]=fObj[i];
     for (j = 0; j < nVar; j++) {
-      a[i][j]=matrix[i][j];
+      A[i][j]=matrix[i][j];
     }
     for (j = nVar; j < nVar+nRestrics; j++){
-      c[j]=0;
+      C[j]=0;
       if(j-nVar==i){
-        a[i][j]=1;
+        A[i][j]=1;
       }else{
-        a[i][j]=0;
+        A[i][j]=0;
       }
     }
   }
+  //---------fin llenado-----//
   ///////////Imprimir/////////
   printf("\nb");
   for (i = 0;i < nRestrics;i++) {
@@ -161,7 +263,7 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
 
   printf("\nc");
   for (i = 0;i < nVar+nRestrics;i++) {
-    printf("| %.0f",c[i]);
+    printf("| %.0f",C[i]);
   }
   printf(" |\n ");
 
@@ -169,10 +271,11 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
   for (i = 0;i < nRestrics;i++) {
     printf("|");
     for (j = 0; j < nVar+nRestrics; j++) {
-      printf(" %.0f",a[i][j]);
+      printf(" %.0f",A[i][j]);
     }
     printf(" |\n ");
   }
+  //------Fin Impresion------//
 }
 
 void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo) {
@@ -204,10 +307,11 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
 
 /////////////////////////////Cuerpo principal///////////////////////////////////
 int main() {
-  int nVar,i = 0;
+  int nVar,i = 0,j;
   char funcObjetivo[MAX_ARRAY];
   int tipo = 0;
   int nRestrics = 0;
+  float real;
 
   printf("Hola, bienvenido al programa simplex\n");
   printf("Ingrese cantidad de variables en el problema:\n");
@@ -234,16 +338,43 @@ int main() {
   float** restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
   for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
 
+  float** inversa = (float **)malloc(sizeof(float *) * nRestrics);
+  for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
+
+  for (i = 0; i < nRestrics; i++) {
+    restOp[i]='<';
+    restDerArray[i]=2.0;
+  }
+  restricsMatrix[0] = getCoefs("1x1+2x2+3x3+4x4+x5", nVar);
+  restricsMatrix[1] = getCoefs("2x1+1x2+5x3+6x4+x5", nVar);
+  restricsMatrix[2] = getCoefs("3x1+5x2+1x3+7x4+x5", nVar);
+  restricsMatrix[3] = getCoefs("4x1+6x2+7x3+1x4+x5", nVar);
+  restricsMatrix[4] = getCoefs("4x1+6x2+7x3+1x4+x5", nVar);
+  //restricsMatrix[5] = getCoefs("4x1+6x2+7x3+1x4", nVar);
+
+  /*
   for(i = 0; i < nRestrics; i++){
     if (i == 0) printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
     printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n", i+1); //coma
     scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
     restricsMatrix[i] = getCoefs(rest, nVar);
-  }
+  }*/
   printf("\n");
-  printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
+  //printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
+
+  printProblema(restricsMatrix,nVar,nVar,restOp,restDerArray, fObjetivoCoefsArray, tipo);
+  printf("\n");
 
   simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
+
+  invermat(nVar,restricsMatrix,inversa,real);
+
+  for (i = 0; i < nVar; i++) {
+    for (j = 0; j < nVar; j++) {
+      printf("%.2f ",inversa[i][j]);
+    }
+    printf("\n");
+  }
 
   /* C -> fObjetivoCoefsArray
    * X -> varsArray
