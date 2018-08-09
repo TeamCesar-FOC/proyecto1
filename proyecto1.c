@@ -281,6 +281,10 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
 void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo) {
   int i,j;
   char var = 'x';
+  for(i = 0; i < 8 * (nVar + 2); i++) {
+    printf("-");
+  }
+  printf("\n");
   printf("\t");
   for (i = 0; i < nVar; i++) {  // Imprimir variables de referencia
     printf("%c\t", var + i );
@@ -290,83 +294,109 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   }
   printf("\n");
 
-  printf("%s\t",tipo==1? "max":"min");  // Imprimir max/min
+  printf("%s:\t",tipo==1? "max":"min");  // Imprimir max/min
   for (i = 0; i < nVar; i++) {       // Imprimir coeficientes de la funcion objetivo
     printf("%g\t", fObj[i]);
   }
   printf("\n");
 
   for (i = 0; i < nRestrics; i++) {
-    printf("\t");
+    printf("%s\t", i == 0 ? "sa:" : "");
     for (j = 0; j < nVar; j++) {
       printf("%g\t", matrix[i][j]);   // Coeficientes de restriccion i
     }
     printf(" %c %g\n", ops[i], derRest[i]);   //Operador y lado derecho de restriccion i
   }
+  for(i = 0; i < 8 * (nVar + 2); i++) {
+    printf("-");
+  }
+  printf("\n");
 }
 
 /////////////////////////////Cuerpo principal///////////////////////////////////
 int main() {
   int nVar,i = 0,j;
   char funcObjetivo[MAX_ARRAY];
-  int tipo = 0;
+  int tipo = 0; // Maximizar o minimizar
   int nRestrics = 0;
   float real;
-
-  printf("Hola, bienvenido al programa simplex\n");
-  printf("Ingrese cantidad de variables en el problema:\n");
-  scanf("%i", &nVar);
-
-  char* varsArray = getVarsArray(nVar);
-
-  printf("Introduzca funcion objetivo (sin espacios).\n");
-  scanf("%s", funcObjetivo);
-
-  float* fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
-
-  TIPO: printf("Seleccione:\n1)Maximizar\n2)Minimizar\n");
-  scanf("%i", &tipo);
-  if(!(tipo==1 || tipo==2)) goto TIPO;
-
-  printf("Introduzca la cantidad de restricciones del problema:\n");
-  scanf("%i", &nRestrics);
-
+  int fromFile = 0;
+  char* varsArray;
+  float* fObjetivoCoefsArray;
   char rest[MAX_ARRAY]; // Restricciones
   char restOp[nRestrics];  // Operador de la restricción
   float* restDerArray = (float *)malloc(sizeof(float) * nRestrics); // Lado derecho de las restricciones
   // Matriz de coeficientes de las restricciones
   float** restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
   for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
-
   float** inversa = (float **)malloc(sizeof(float *) * nRestrics);
   for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
-  for (i = 0; i < nRestrics; i++) {
-    restOp[i]='<';
-    restDerArray[i]=2.0;
+  printf("Hola, bienvenido al programa simplex\n");
+  printf("1) Ingresar datos por consola.\n");
+  printf("2) Cargar datos desde un archivo.\n");
+  scanf("%i", &fromFile);
+
+  /* Carga de datos desde archivo:
+   * nombre del archivo es: "problema.txt"
+   * debe contener:
+   * 
+   * NumVariables NumRestricciones
+   * max/min FuncionObjetivo
+   * nFunciones tipoDesigualdad numero
+   * 
+   * Ej: 
+   * 2 2
+   * max 2x+3y
+   * 5x+6y <= 10
+   * 2x+0y <= 5
+   * 
+   * NOTA: En las restricciones deben ir explicitas los coeficientes de todas las variables y en el mismo orden.
+   */
+  if (fromFile == 2) {
+    char line[MAX_ARRAY];
+    FILE *file;
+    file = fopen("problema.txt", "r");
+    if (file) {
+      char ftipo[4];
+      fscanf(file, "%i %i\n", &nVar, &nRestrics);
+      varsArray = getVarsArray(nVar);
+      fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
+      fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
+      for (i = 0; i < nRestrics; i++){
+        fscanf(file, "%s %c= %f\n", rest, &restOp[i], &restDerArray[i]);
+        restricsMatrix[i] = getCoefs(rest, nVar);
+      }
+      tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n 
+    }
+    fclose(file);
+  } else {
+    printf("Ingrese cantidad de variables en el problema:\n");
+    scanf("%i", &nVar);
+    varsArray = getVarsArray(nVar);
+
+    printf("Introduzca funcion objetivo (sin espacios).\n");
+    scanf("%s", funcObjetivo);
+    fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
+
+    TIPO: printf("Seleccione:\n1)Maximizar\n2)Minimizar\n");
+    scanf("%i", &tipo);
+    if(!(tipo==1 || tipo==2)) goto TIPO;
+
+    printf("Introduzca la cantidad de restricciones del problema:\n");
+    scanf("%i", &nRestrics);
+
+    for(i = 0; i < nRestrics; i++){
+      if (i == 0) printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
+      printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n", i+1); //coma
+      scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
+      restricsMatrix[i] = getCoefs(rest, nVar);
+    }
   }
-  restricsMatrix[0] = getCoefs("1x1+2x2+3x3+4x4+x5", nVar);
-  restricsMatrix[1] = getCoefs("2x1+1x2+5x3+6x4+x5", nVar);
-  restricsMatrix[2] = getCoefs("3x1+5x2+1x3+7x4+x5", nVar);
-  restricsMatrix[3] = getCoefs("4x1+6x2+7x3+1x4+x5", nVar);
-  restricsMatrix[4] = getCoefs("4x1+6x2+7x3+1x4+x5", nVar);
-  //restricsMatrix[5] = getCoefs("4x1+6x2+7x3+1x4", nVar);
+  printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
 
-  /*
-  for(i = 0; i < nRestrics; i++){
-    if (i == 0) printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
-    printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n", i+1); //coma
-    scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
-    restricsMatrix[i] = getCoefs(rest, nVar);
-  }*/
-  printf("\n");
-  //printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
-
-  printProblema(restricsMatrix,nVar,nVar,restOp,restDerArray, fObjetivoCoefsArray, tipo);
-  printf("\n");
-
-  simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
-
+//  simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
+/*
   invermat(nVar,restricsMatrix,inversa,real);
 
   for (i = 0; i < nVar; i++) {
@@ -375,6 +405,8 @@ int main() {
     }
     printf("\n");
   }
+
+  */
 
   /* C -> fObjetivoCoefsArray
    * X -> varsArray
@@ -391,7 +423,9 @@ int main() {
 
 
 
-
+  // Liberamos memoria dinámica
+  for(i = 0; i < nRestrics; i++) free(inversa[i]);
+  free(inversa);
   for(i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
   free(restricsMatrix);
   free(restDerArray);
