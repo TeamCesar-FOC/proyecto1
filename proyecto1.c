@@ -322,7 +322,7 @@ int main() {
   int fromFile = 0;
   char* varsArray;
   float* fObjetivoCoefsArray;
-  char restOp[nRestrics];
+  char* restOp;
   char rest[MAX_ARRAY]; // Restricciones
   float* restDerArray; // Lado derecho de las restricciones
   // Matriz de coeficientes de las restricciones
@@ -356,9 +356,8 @@ int main() {
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
-      printf("%i %i\n", nVar, nRestrics);
       
-      char restOp[nRestrics];  // Operador de la restricción*
+      restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
       restDerArray = (float *)malloc(sizeof(float) * nRestrics);
       restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
       for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
@@ -366,11 +365,8 @@ int main() {
       for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
       varsArray = getVarsArray(nVar);
-      printf("%s\n",varsArray);
       fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
-      printf("%s %s\n", ftipo, funcObjetivo);
       fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
-      printCoefs(fObjetivoCoefsArray, nVar);
       for (int k = 0; k < nRestrics; k++){
         fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
         restricsMatrix[k] = getCoefs(rest, nVar);
@@ -394,7 +390,7 @@ int main() {
     printf("Introduzca la cantidad de restricciones del problema:\n");
     scanf("%i", &nRestrics);
 
-    char restOp[nRestrics];  // Operador de la restricción*
+    restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
     restDerArray = (float *)malloc(sizeof(float) * nRestrics);
     restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
     for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
@@ -408,6 +404,8 @@ int main() {
       restricsMatrix[i] = getCoefs(rest, nVar);
     }
   }
+  // ^ Fin Recoleccion de datos ^
+
   printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
 
   simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
@@ -444,6 +442,7 @@ int main() {
   for(i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
   free(restricsMatrix);
   free(restDerArray);
+  free(restOp);
   free(fObjetivoCoefsArray);
   free(varsArray);
 
