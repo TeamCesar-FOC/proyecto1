@@ -334,7 +334,7 @@ float** multiplyMatrix(float** matrix1, float** matrix2, int nVar, int nRestrics
     }
     printf("\n");
   }
- 
+
   return matrixResult;
 }
 
@@ -357,6 +357,19 @@ float** array2matrix(float* array, int len) {
   return matrixResult;
 }
 
+void printMatrix(float **matrix, int n, int m, char* mensaje){
+  int i, j;
+
+  printf("\n%s\n ",mensaje);
+  for (i = 0;i < n;i++) {
+    printf("|");
+    for (j = 0; j < m; j++) {
+      printf(" %.3f",matrix[i][j]);
+    }
+    printf(" |\n ");
+  }
+}
+
 /////////////////////////////Cuerpo principal///////////////////////////////////
 int main() {
   int nVar,nRestrics,i,j;
@@ -370,7 +383,7 @@ int main() {
   char rest[MAX_ARRAY]; // Restricciones
   float* restDerArray; // Lado derecho de las restricciones
   // Matriz de coeficientes de las restricciones
-  float** restricsMatrix; 
+  float** restricsMatrix;
   float** inversa;
   printf("Hola, bienvenido al programa simplex\n");
   printf("1) Ingresar datos por consola.\n");
@@ -380,17 +393,17 @@ int main() {
   /* Carga de datos desde archivo:
    * nombre del archivo es: "problema.txt"
    * debe contener:
-   * 
+   *
    * NumVariables NumRestricciones
    * max/min FuncionObjetivo
    * nFunciones tipoDesigualdad numero
-   * 
-   * Ej: 
+   *
+   * Ej:
    * 2 2
    * max 2x+3y
    * 5x+6y <= 10
    * 2x+0y <= 5
-   * 
+   *
    * NOTA: En las restricciones deben ir explicitas los coeficientes de todas las variables y en el mismo orden.
    */
   if (fromFile == 2) {
@@ -400,7 +413,7 @@ int main() {
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
-      
+
       restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
       restDerArray = (float *)malloc(sizeof(float) * nRestrics);
       restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
@@ -415,7 +428,7 @@ int main() {
         fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
         restricsMatrix[k] = getCoefs(rest, nVar);
       }
-      tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n 
+      tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
     }
     fclose(file);
   } else {
@@ -455,7 +468,7 @@ int main() {
   float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nVar, nRestrics);
   // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
   // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
-  
+
 
 
   printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
@@ -464,13 +477,7 @@ int main() {
 
   invermat(nVar,restricsMatrix,inversa,real);
 
-  for (i = 0; i < nVar; i++) {
-    for (j = 0; j < nVar; j++) {
-      printf("%.2f ",inversa[i][j]);
-    }
-    printf("\n");
-  }
-
+  printMatrix(inversa,nVar,nVar,"Inversa");
 
 
   /* C -> fObjetivoCoefsArray
