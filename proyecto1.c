@@ -333,6 +333,38 @@ float** multiplyMatrix(float** matrix1, float** matrix2, int n1, int m2,int l) {
   return matrixResult;
 }
 
+float* matrixArray(float** matrix, float* vector, int n1,int l) {
+  int i,k;
+  float *arrayResult = (float *)malloc(sizeof(float) * l);
+
+
+  for (i = 0; i < n1; i++) {
+    arrayResult[i] = 0; // Inicializar vector resultado
+		for (k = 0; k < l; k++) {
+			arrayResult[i] += matrix[i][k] * vector[k];
+		}
+	}
+
+  for (i = 0; i < l; i++) {
+    printf("%.2f\t", arrayResult[i]);
+  }
+  printf("\n");
+
+  return arrayResult;
+}
+
+float arrayArray(float* vector1, float* vector2, int l) {
+  int k;
+  float result;
+
+  result = 0; // Inicializar matriz resultado
+	for (k = 0; k < l; k++) {
+		result += vector1[k] * vector2[k];
+	}
+
+  return result;
+}
+
 float** array2matrix(float* array, int len) {
   int i;
   float **matrixResult = (float **)malloc(sizeof(float *) * len);
@@ -413,7 +445,7 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
     printMatrix(Binv,nRestrics,nRestrics,"B inversa");
 
     ////////////TERCERO // Xb y Z //
-    float **Xb = multiplyMatrix(Binv, array2matrix(b, nRestrics), nRestrics,1, nVar);
+    float *Xb = matrixArray(Binv, b, nRestrics, nVar);
     ////////////CUARTO // Determinar quien entra en la base //
 
     ////////////QUINTO // Determinar quien sale //
@@ -518,32 +550,30 @@ int main() {
   }
   // ^ Fin carga de datos ^
 
-  //float **arr = array2matrix(restDerArray, nRestrics);
-
-  float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
-  // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
-  // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
-
-
-
-  printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
-
-  simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
-
-  //invermat(nVar,restricsMatrix,inversa,real);
-
-  //printMatrix(inversa,nVar,nVar,"Inversa");
-
-
-  /* C -> fObjetivoCoefsArray
-   * X -> varsArray
-   * A -> restricsMatrix
-   * b -> restDerArray
-   */
-
   if (nVar > nRestrics) {
     printf("Este problema no tiene solucion factible. Nro variables mayor al nro restricciones.\n"); //coma
     return 0;
+  }else{
+    //float **arr = array2matrix(restDerArray, nRestrics);
+
+    //float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
+    // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
+    // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
+
+    printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
+
+    simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
+
+    //invermat(nVar,restricsMatrix,inversa,real);
+
+    //printMatrix(inversa,nVar,nVar,"Inversa");
+
+
+    /* C -> fObjetivoCoefsArray
+     * X -> varsArray
+     * A -> restricsMatrix
+     * b -> restDerArray
+     */
   }
 
   // Convertimos a forma estandar
@@ -551,8 +581,8 @@ int main() {
 
 
   // Liberamos memoria dinámica
-  for(i = 0; i < nRestrics; i++) free(mult[i]);
-  free(mult);
+  /*for(i = 0; i < nRestrics; i++) free(mult[i]);
+  free(mult);*/
   for(i = 0; i < nRestrics; i++) free(inversa[i]);
   free(inversa);
   for(i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
