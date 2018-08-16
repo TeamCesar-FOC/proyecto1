@@ -232,50 +232,46 @@ void invermat(int n, float **a, float **ainv, float determ) {
 	free(D);
 }//ciere de inverir matriz
 
+int optimo(){
+  return 0;
+}
 
-void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
-  int i,j;
-  float b[nRestrics],A[nRestrics][nVar+nRestrics], C[nVar+nRestrics];//pag5
-  float B[nVar][nVar],BI[nVar][nVar];//pag5
-  ///////// llenado  b,A,C//////////////
-  for (i = 0;i < nRestrics;i++) {
-    b[i]=derRest[i];
-    C[i]=fObj[i];
-    for (j = 0; j < nVar; j++) {
-      A[i][j]=matrix[i][j];
+//imprimir matriz 150818
+void printMatrix(float **matrix, int n, int m, char* mensaje){
+  int i, j;
+
+  printf("\n%s\n ",mensaje);
+  for (i = 0;i < n;i++) {
+    printf("|");
+    for (j = 0; j < m; j++) {
+      printf(" %.3f",matrix[i][j]);
     }
-    for (j = nVar; j < nVar+nRestrics; j++){
-      C[j]=0;
-      if(j-nVar==i){
-        A[i][j]=1;
-      }else{
-        A[i][j]=0;
-      }
-    }
-  }
-  //---------fin llenado-----//
-  ///////////Imprimir/////////
-  printf("\nb");
-  for (i = 0;i < nRestrics;i++) {
-    printf("| %.0f",b[i]);
     printf(" |\n ");
   }
+}
 
-  printf("\nc");
-  for (i = 0;i < nVar+nRestrics;i++) {
-    printf("| %.0f",C[i]);
+void printMatriz(float matrix[][MAX_ARRAY ], int n, int m, char* mensaje){
+  int i, j;
+
+  printf("\n%s\n ",mensaje);
+  for (i = 0;i < n;i++) {
+    printf("|");
+    for (j = 0; j < m; j++) {
+      printf(" %.3f",matrix[i][j]);
+    }
+    printf(" |\n ");
+  }
+}
+
+//imprimir vector 150818
+void printArray(float *array, int n, char* mensaje){
+  int i;
+
+  printf("\n%s\n",mensaje);
+  for (i = 0;i < n;i++) {
+    printf("| %.0f",array[i]);
   }
   printf(" |\n ");
-
-  printf("\nA");
-  for (i = 0;i < nRestrics;i++) {
-    printf("|");
-    for (j = 0; j < nVar+nRestrics; j++) {
-      printf(" %.0f",A[i][j]);
-    }
-    printf(" |\n ");
-  }
-  //------Fin Impresion------//
 }
 
 void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo) {
@@ -357,17 +353,77 @@ float** array2matrix(float* array, int len) {
   return matrixResult;
 }
 
-void printMatrix(float **matrix, int n, int m, char* mensaje){
-  int i, j;
+void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
+  int i,j;
+  float determinante;
+  float A[nRestrics][nVar+nRestrics], C[nVar+nRestrics];//pag5
 
-  printf("\n%s\n ",mensaje);
-  for (i = 0;i < n;i++) {
+  float *b = (float *)malloc(sizeof(float) * nRestrics);
+
+  float **B = (float **)malloc(sizeof(float *) * nRestrics);
+  for(i = 0; i < nRestrics; i++) B[i] = (float *)malloc(sizeof(float) * nRestrics);
+  float **Binv = (float **)malloc(sizeof(float *) * nRestrics);
+  for(i = 0; i < nRestrics; i++) Binv[i] = (float *)malloc(sizeof(float) * nRestrics);
+
+  ///////// PRIMERO llenado  b,A,C//////////////
+  for (i = 0;i < nRestrics;i++) {
+    b[i]=derRest[i];
+    C[i]=fObj[i];
+    for (j = 0; j < nVar; j++) {
+      A[i][j]=matrix[i][j];
+    }
+    for (j = nVar; j < nVar+nRestrics; j++){
+      C[j]=0;
+      if(j-nVar==i){
+        A[i][j]=1;
+      }else{
+        A[i][j]=0;
+      }
+      B[i][j-nVar]=A[i][j];
+    }
+  }
+  //---------fin llenado-----//
+  ///////////Imprimir/////////
+  printf("\nb");
+  for (i = 0;i < nRestrics;i++) {
+    printf("| %.0f",b[i]);
+    printf(" |\n ");
+  }
+
+  printf("\nc");
+  for (i = 0;i < nVar+nRestrics;i++) {
+    printf("| %.0f",C[i]);
+  }
+  printf(" |\n ");
+
+  printf("\nA");
+  for (i = 0;i < nRestrics;i++) {
     printf("|");
-    for (j = 0; j < m; j++) {
-      printf(" %.3f",matrix[i][j]);
+    for (j = 0; j < nVar+nRestrics; j++) {
+      printf(" %.0f",A[i][j]);
     }
     printf(" |\n ");
   }
+
+  printMatrix(B,nRestrics,nRestrics,"B");
+  //------Fin Impresion------//
+  //while(optimo()==0){
+    ////////////SEGUNDO // inversa de B//
+    invermat(nRestrics,B,Binv,determinante);
+
+    printMatrix(Binv,nRestrics,nRestrics,"B inversa");
+
+    ////////////TERCERO // Xb y Z //
+    float **Xb = multiplyMatrix(Binv, array2matrix(b, nRestrics), nVar, nRestrics);
+    ////////////CUARTO // Determinar quien entra en la base //
+
+    ////////////QUINTO // Determinar quien sale //
+
+    ////////////SEXTO // una vaina loca descrita
+
+    ////////////SEPTIMO // Regresar a SEGUNDO paso hasta que se cumpla optimizacion
+  //}
+
 }
 
 /////////////////////////////Cuerpo principal///////////////////////////////////
@@ -409,7 +465,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema.txt", "r");
+    file = fopen("problema2.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
@@ -475,9 +531,9 @@ int main() {
 
   simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
 
-  invermat(nVar,restricsMatrix,inversa,real);
+  //invermat(nVar,restricsMatrix,inversa,real);
 
-  printMatrix(inversa,nVar,nVar,"Inversa");
+  //printMatrix(inversa,nVar,nVar,"Inversa");
 
 
   /* C -> fObjetivoCoefsArray
