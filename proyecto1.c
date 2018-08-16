@@ -309,23 +309,22 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   printf("\n");
 }
 
-float** multiplyMatrix(float** matrix1, float** matrix2, int nVar, int nRestrics) {
-  float **matrixResult = (float **)malloc(sizeof(float *) * nRestrics);
-  for (int i = 0; i < nRestrics; i++) matrixResult[i] = (float *)malloc(sizeof(float) * nVar);
-  int max = nVar > nRestrics? nVar : nRestrics;
+float** multiplyMatrix(float** matrix1, float** matrix2, int n1, int m2,int l) {
+  float **matrixResult = (float **)malloc(sizeof(float *) * n1);
+  for (int i = 0; i < n1; i++) matrixResult[i] = (float *)malloc(sizeof(float) * m2);
+  //int max = nVar > nRestrics? nVar : nRestrics;
 
-
-  for (int i = 0; i < nRestrics; i++) {
-		for (int j = 0; j < nRestrics; j++) {
+  for (int i = 0; i < n1; i++) {
+		for (int j = 0; j < m2; j++) {
       matrixResult[i][j] = 0; // Inicializar matriz resultado
-			for (int k = 0; k < nVar; k++) {
+			for (int k = 0; k < l; k++) {
 				matrixResult[i][j] += matrix1[i][k] * matrix2[k][j];
 			}
 		}
 	}
 
-  for (int i = 0; i < nRestrics; i++) {
-    for (int j = 0; j < nVar; j++) {
+  for (int i = 0; i < n1; i++) {
+    for (int j = 0; j < m2; j++) {
       printf("%.2f\t", matrixResult[i][j]);
     }
     printf("\n");
@@ -414,7 +413,7 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
     printMatrix(Binv,nRestrics,nRestrics,"B inversa");
 
     ////////////TERCERO // Xb y Z //
-    float **Xb = multiplyMatrix(Binv, array2matrix(b, nRestrics), nVar, nRestrics);
+    float **Xb = multiplyMatrix(Binv, array2matrix(b, nRestrics), nRestrics,1, nVar);
     ////////////CUARTO // Determinar quien entra en la base //
 
     ////////////QUINTO // Determinar quien sale //
@@ -521,7 +520,7 @@ int main() {
 
   //float **arr = array2matrix(restDerArray, nRestrics);
 
-  float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nVar, nRestrics);
+  float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
   // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
   // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
 
