@@ -345,11 +345,6 @@ float* matrixArray(float** matrix, float* vector, int n1,int l) {
 		}
 	}
 
-  for (i = 0; i < l; i++) {
-    printf("%.2f\t", arrayResult[i]);
-  }
-  printf("\n");
-
   return arrayResult;
 }
 
@@ -384,22 +379,92 @@ float** array2matrix(float* array, int len) {
   return matrixResult;
 }
 
-void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
+
+void obtenerB(float **matrixA,int *varBasicas,float **matrixB,int nRestrics,int nVar){
   int i,j;
-  float determinante;
-  float A[nRestrics][nVar+nRestrics], C[nVar+nRestrics];//pag5
+  for (i = 0; i < nRestrics; i++) {
+    for (j = 0; j < nRestrics; j++) {
+      matrixB[j][i]=matrixA[j][varBasicas[i]];
+    }
+  }
+}
+
+void obtenerCb(float *vectorC,int *varBasicas,float *Cb,int nRestrics){
+  int i;
+  for (i = 0; i < nRestrics; i++) {
+    Cb[i]=vectorC[varBasicas[i]];
+  }
+}
+
+void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOScj,int nRestrics,int nVar){
+  int i,j;
+  //float *y = (float *)malloc(sizeof(float) * nRestrics);
+  float *a = (float *)malloc(sizeof(float) * nRestrics);
+
+  for (i = 0; i < nRestrics+nVar; i++) {
+    if(x[i]==0){
+      for (j = 0; j < nRestrics; j++) {
+        a[j]=A[j][i];
+      }
+      printArray(a,nRestrics,"a");
+
+      float *y = matrixArray(Binv,a,nRestrics,nRestrics);
+
+      zjMENOScj[i] = arrayArray(Cb,y,nRestrics) - C[i];
+    }else{
+      zjMENOScj[i]=0;
+    }
+  }
+  printArray(zjMENOScj,nRestrics+nVar,"Zj");
+}
+
+int in(int tipo,float *zj,int n){
+  int i;
+  int result=0;
+
+  if (tipo == 1) { //identificar si es maximizacion y minimizacion
+    for (i = 1; i < n; i++) {
+      if (zj[i] < zj[result]) {
+        result=i;
+      }
+    }
+  }else{
+    for (i = 1; i < n; i++) {
+      if (zj[i] > zj[result]) {
+        result=i;
+      }
+    }
+  }
+
+  return result;
+}
+
+void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
+  int i,j,entra,sale;
+  float determinante,Z;
 
   float *b = (float *)malloc(sizeof(float) * nRestrics);
+  float *C = (float *)malloc(sizeof(float) * nRestrics+nVar);
+  float *Cb = (float *)malloc(sizeof(float) * nRestrics);
+  float *zj = (float *)malloc(sizeof(float) * nRestrics+nVar);
+
+  int *varBasicas = (int *)malloc(sizeof(int) * nRestrics);
+  int *x = (int *)malloc(sizeof(int) * nRestrics+nVar);
 
   float **B = (float **)malloc(sizeof(float *) * nRestrics);
   for(i = 0; i < nRestrics; i++) B[i] = (float *)malloc(sizeof(float) * nRestrics);
   float **Binv = (float **)malloc(sizeof(float *) * nRestrics);
   for(i = 0; i < nRestrics; i++) Binv[i] = (float *)malloc(sizeof(float) * nRestrics);
+  float **A = (float **)malloc(sizeof(float *) * nRestrics+nVar);
+  for(i = 0; i < nRestrics+nVar; i++) A[i] = (float *)malloc(sizeof(float) * nRestrics);
 
   ///////// PRIMERO llenado  b,A,C//////////////
   for (i = 0;i < nRestrics;i++) {
+    x[i]=0;
+
     b[i]=derRest[i];
     C[i]=fObj[i];
+    varBasicas[i]=i+nVar;
     for (j = 0; j < nVar; j++) {
       A[i][j]=matrix[i][j];
     }
@@ -410,9 +475,12 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
       }else{
         A[i][j]=0;
       }
-      B[i][j-nVar]=A[i][j];
     }
   }
+  for (i = nVar; i < nVar+nRestrics; i++) {
+    x[i]=1;
+  }
+
   //---------fin llenado-----//
   ///////////Imprimir/////////
   printf("\nb");
@@ -435,19 +503,29 @@ void  simplex(float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
     }
     printf(" |\n ");
   }
-
-  printMatrix(B,nRestrics,nRestrics,"B");
   //------Fin Impresion------//
   //while(optimo()==0){
     ////////////SEGUNDO // inversa de B//
-    invermat(nRestrics,B,Binv,determinante);
+    obtenerB(A,varBasicas,B,nRestrics,nVar);
+    printMatrix(B,nRestrics,nRestrics,"B");
 
+    invermat(nRestrics,B,Binv,determinante);
     printMatrix(Binv,nRestrics,nRestrics,"B inversa");
 
     ////////////TERCERO // Xb y Z //
     float *Xb = matrixArray(Binv, b, nRestrics, nVar);
-    ////////////CUARTO // Determinar quien entra en la base //
+    printArray(Xb,nRestrics,"Xb");
 
+    obtenerCb(C,varBasicas,Cb,nRestrics);
+    printArray(Cb,nRestrics,"Cb");
+
+    Z = arrayArray(Cb,Xb,nRestrics);
+    printf("Z = %f\n",Z);
+    ////////////CUARTO // Determinar quien entra en la base //
+    obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
+
+    entra = in(tipo,zj,nRestrics+nVar);
+    printf("\n%f\n",zj[entra]);
     ////////////QUINTO // Determinar quien sale //
 
     ////////////SEXTO // una vaina loca descrita
@@ -562,7 +640,7 @@ int main() {
 
     printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
 
-    simplex(restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
+    simplex(tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
 
     //invermat(nVar,restricsMatrix,inversa,real);
 
