@@ -402,7 +402,7 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
       for (j = 0; j < nRestrics; j++) {
         a[j]=A[j][i];
       }
-      printArray(a,nRestrics,"a");
+      //printArray(a,nRestrics,"a");
 
       float *y = matrixArray(Binv,a,nRestrics,nRestrics);
 
@@ -411,7 +411,7 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
       zjMENOScj[i]=0;
     }
   }
-  printArray(zjMENOScj,nRestrics+nVar,"Zj");
+  printArray(zjMENOScj,nRestrics+nVar,"Zj-Cj");
 }
 
 int in(int tipo,float *zj,int n){
@@ -445,12 +445,16 @@ int out(int entra,float *b,float **A,int nRestrics){
   return result;
 }
 
-int optimo(float *zj,int n){
+int optimo(int tipo, float *zj,int n){
   int i=0,result = 1;
 
   while(i < n && result == 1){
-    if(zj[i] < 0){
+    if(tipo==1 && zj[i] < 0){
       result = 0;
+    }else{
+      if (tipo==2 && zj[i] > 0) {
+        result = 0;
+      }
     }
     i++;
   }
@@ -458,7 +462,7 @@ int optimo(float *zj,int n){
 }
 
 void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
-  int i,j,entra,sale;
+  int i,j,entra,sale,tabla=1,repite=1;
   float determinante,Z;
 
   float *b = (float *)malloc(sizeof(float) * nRestrics);
@@ -523,20 +527,29 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   }
   //------Fin Impresion------//
   do{
+    printf("\n");
     printf("--------------------------------------------------\n");
+    printf("---------------------Tabla %i---------------------\n",tabla);
+    printf("--------------------------------------------------\n");
+
+
     ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
     printMatrix(B,nRestrics,nRestrics,"B");
 
     invermat(nRestrics,B,Binv,determinante);
     printMatrix(Binv,nRestrics,nRestrics,"B inversa");
+    printf("\n");
 
     ////////////TERCERO // Xb y Z //
     float *Xb = matrixArray(Binv, b, nRestrics, nVar);
-    printArray(Xb,nRestrics,"Xb");
+
+    printf("x%i = %f\n",varBasicas[0]+1,Xb[0]);
+    printf("x%i = %f\n",varBasicas[1]+1,Xb[1]);
+    //printArray(Xb,nRestrics,"Xb");
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
-    printArray(Cb,nRestrics,"Cb");
+    //printArray(Cb,nRestrics,"Cb");
 
     Z = arrayArray(Cb,Xb,nRestrics);
     printf("Z = %f\n",Z);
@@ -544,22 +557,27 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
 
-    entra = in(tipo,zj,nRestrics+nVar);
-    printf("\nEntra x%i\n",entra+1);
+    if(optimo(tipo,zj,nRestrics+nVar)==0){
+      entra = in(tipo,zj,nRestrics+nVar);
+      printf("\nEntra x%i\n",entra+1);
 
-    ////////////QUINTO // Determinar quien sale //
-    sale = out(entra,b,A,nRestrics);
-    printf("\nSale x%i\n",varBasicas[sale]+1);
+      ////////////QUINTO // Determinar quien sale //
+      sale = out(entra,b,A,nRestrics);
+      printf("Sale x%i\n",varBasicas[sale]+1);
 
-    ////////////SEXTO // una vaina loca descrita
-    x[entra] = 1;
-    x[varBasicas[sale]] = 0;
+      ////////////SEXTO // una vaina loca descrita
+      x[entra] = 1;
+      x[varBasicas[sale]] = 0;
 
-    varBasicas[sale] = entra;
-    Cb[sale] = C[entra];
+      varBasicas[sale] = entra;
+      Cb[sale] = C[entra];
 
+      tabla++;
+    }else{
+        repite=0;
+    }
     ////////////SEPTIMO // Regresar a SEGUNDO paso hasta que se cumpla optimizacion
-  }while(optimo(zj,nRestrics+nVar)==0);
+  }while(repite == 1);
 
 }
 
