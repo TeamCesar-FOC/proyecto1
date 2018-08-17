@@ -232,10 +232,6 @@ void invermat(int n, float **a, float **ainv, float determ) {
 	free(D);
 }//ciere de inverir matriz
 
-int optimo(){
-  return 0;
-}
-
 //imprimir matriz 150818
 void printMatrix(float **matrix, int n, int m, char* mensaje){
   int i, j;
@@ -439,6 +435,28 @@ int in(int tipo,float *zj,int n){
   return result;
 }
 
+int out(int entra,float *b,float **A,int nRestrics){
+  int i, result=0;
+  for (i = 1; i < nRestrics; i++) {
+    if(b[i]/A[i][entra] < b[result]/A[result][entra]){
+      result = i;
+    }
+  }
+  return result;
+}
+
+int optimo(float *zj,int n){
+  int i=0,result = 1;
+
+  while(i < n && result == 1){
+    if(zj[i] < 0){
+      result = 0;
+    }
+    i++;
+  }
+  return result;
+}
+
 void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
   int i,j,entra,sale;
   float determinante,Z;
@@ -504,7 +522,8 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     printf(" |\n ");
   }
   //------Fin Impresion------//
-  //while(optimo()==0){
+  do{
+    printf("--------------------------------------------------\n");
     ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
     printMatrix(B,nRestrics,nRestrics,"B");
@@ -521,17 +540,26 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
 
     Z = arrayArray(Cb,Xb,nRestrics);
     printf("Z = %f\n",Z);
+
     ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
 
     entra = in(tipo,zj,nRestrics+nVar);
-    printf("\n%f\n",zj[entra]);
+    printf("\nEntra x%i\n",entra+1);
+
     ////////////QUINTO // Determinar quien sale //
+    sale = out(entra,b,A,nRestrics);
+    printf("\nSale x%i\n",varBasicas[sale]+1);
 
     ////////////SEXTO // una vaina loca descrita
+    x[entra] = 1;
+    x[varBasicas[sale]] = 0;
+
+    varBasicas[sale] = entra;
+    Cb[sale] = C[entra];
 
     ////////////SEPTIMO // Regresar a SEGUNDO paso hasta que se cumpla optimizacion
-  //}
+  }while(optimo(zj,nRestrics+nVar)==0);
 
 }
 
