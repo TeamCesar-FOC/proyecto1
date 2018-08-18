@@ -437,9 +437,12 @@ int in(int tipo,float *zj,int n){
 
 int out(int entra,float *b,float **A,int nRestrics){
   int i, result=0;
+  printf("De tin marin de do pin\n" );
+  printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
   for (i = 1; i < nRestrics; i++) {
     if(b[i]/A[i][entra] < b[result]/A[result][entra]){
       result = i;
+      printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
     }
   }
   return result;
