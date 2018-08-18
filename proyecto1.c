@@ -412,6 +412,8 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
     }
   }
   printArray(zjMENOScj,nRestrics+nVar,"Zj-Cj");
+
+  free(a);
 }
 
 int in(int tipo,float *zj,int n){
@@ -435,16 +437,28 @@ int in(int tipo,float *zj,int n){
   return result;
 }
 
-int out(int entra,float *b,float **A,int nRestrics){
+int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   int i, result=0;
+  float *a = (float *)malloc(sizeof(float) * nRestrics);
+
+  for (i = 0; i < nRestrics; i++) {
+    a[i]=A[i][entra];
+  }
+  //printArray(a,nRestrics,"a");
+
+  float *y = matrixArray(Binv,a,nRestrics,nRestrics);
+
   printf("De tin marin de do pin\n" );
-  printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
+  printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
   for (i = 1; i < nRestrics; i++) {
-    if(b[i]/A[i][entra] < b[result]/A[result][entra]){
+    if(b[i]/y[i] < b[result]/y[result]){
       result = i;
-      printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
+      printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
     }
   }
+  free(a);
+  free(y);
+
   return result;
 }
 
@@ -570,7 +584,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
       printf("\nEntra %c%i\n",entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
-      sale = out(entra,b,A,nRestrics);
+      sale = out(entra,Xb,A,Binv,nRestrics);
       printf("Sale %c%i\n",varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
@@ -628,7 +642,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema.txt", "r");
+    file = fopen("problema2.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
