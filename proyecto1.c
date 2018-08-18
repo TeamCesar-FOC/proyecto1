@@ -265,7 +265,7 @@ void printArray(float *array, int n, char* mensaje){
 
   printf("\n%s\n",mensaje);
   for (i = 0;i < n;i++) {
-    printf("| %.0f",array[i]);
+    printf("| %3g",array[i]);
   }
   printf(" |\n ");
 }
@@ -544,8 +544,13 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     ////////////TERCERO // Xb y Z //
     float *Xb = matrixArray(Binv, b, nRestrics, nVar);
 
-    printf("x%i = %f\n",varBasicas[0]+1,Xb[0]);
-    printf("x%i = %f\n",varBasicas[1]+1,Xb[1]);
+    //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
+    //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
+    //el +1 porque el indice empieza en 0, el -(nVar-1) porque las x's terminan en 'x'nVar-1 por el hecho que empiezan con indice 0
+    for(i = 0; i<nRestrics; i++){
+      printf("%c%i = %f\n",varBasicas[i]<nVar?'x':'h',varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1),Xb[i]);
+
+    }
     //printArray(Xb,nRestrics,"Xb");
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
@@ -559,11 +564,11 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
 
     if(optimo(tipo,zj,nRestrics+nVar)==0){
       entra = in(tipo,zj,nRestrics+nVar);
-      printf("\nEntra x%i\n",entra+1);
+      printf("\nEntra %c%i\n",entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
       sale = out(entra,b,A,nRestrics);
-      printf("Sale x%i\n",varBasicas[sale]+1);
+      printf("Sale %c%i\n",varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
       x[entra] = 1;
@@ -620,7 +625,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema2.txt", "r");
+    file = fopen("problema.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
