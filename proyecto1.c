@@ -289,7 +289,7 @@ void printMatrix(float **matrix, int n, int m, char* mensaje){
   for (i = 0;i < n;i++) {
     printf("|");
     for (j = 0; j < m; j++) {
-      printf(" %.3f",matrix[i][j]);
+      printf(" %3g",matrix[i][j]);
     }
     printf(" |\n ");
   }
@@ -302,7 +302,7 @@ void printMatriz(float matrix[][MAX_ARRAY ], int n, int m, char* mensaje){
   for (i = 0;i < n;i++) {
     printf("|");
     for (j = 0; j < m; j++) {
-      printf(" %.3f",matrix[i][j]);
+      printf(" %3g",matrix[i][j]);
     }
     printf(" |\n ");
   }
@@ -496,17 +496,16 @@ int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   printArray(a,nRestrics,"a");
 
   float *y = matrixArray(Binv,a,nRestrics,nRestrics);
-
   printf("De tin marin de do pin\n" );
-  printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
+  printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
   for (i = 1; i < nRestrics; i++) {
-    if(b[i]/y[i] < b[result]/y[result]){
+    if((b[i]/y[i])*(b[i]/y[i]) < (b[result]/y[result])*(b[result]/y[result])){ // Simplemente los multiplico por si mismos para cambiarles el signo si fuera negativo alguno
       result = i;
-      printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
+      printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
     }
   }
-  free(a);
   free(y);
+  free(a);
 
   return result;
 }
@@ -573,13 +572,13 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   ///////////Imprimir/////////
   printf("\nb");
   for (i = 0;i < nRestrics;i++) {
-    printf("| %.0f",b[i]);
+    printf("| %3g",b[i]);
     printf(" |\n ");
   }
 
   printf("\nc");
   for (i = 0;i < nVar+nRestrics;i++) {
-    printf("| %.0f",C[i]);
+    printf("| %3g",C[i]);
   }
   printf(" |\n ");
 
@@ -587,7 +586,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   for (i = 0;i < nRestrics;i++) {
     printf("|");
     for (j = 0; j < nVar+nRestrics; j++) {
-      printf(" %.0f",A[i][j]);
+      printf(" %3g",A[i][j]);
     }
     printf(" |\n ");
   }
@@ -614,7 +613,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
     //el +1 porque el indice empieza en 0, el -(nVar-1) porque las x's terminan en 'x'nVar-1 por el hecho que empiezan con indice 0
     for(i = 0; i<nRestrics; i++){
-      printf("%c%i = %f\n",varBasicas[i]<nVar?'x':'h',varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1),Xb[i]);
+      printf("%c%i = %3g\n",varBasicas[i]<nVar?'x':'h',varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1),Xb[i]);
 
     }
     //printArray(Xb,nRestrics,"Xb");
@@ -623,7 +622,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     //printArray(Cb,nRestrics,"Cb");
 
     Z = arrayArray(Cb,Xb,nRestrics);
-    printf("Z = %f\n",Z);
+    printf("Z = %3g\n",Z);
 
     ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
@@ -708,9 +707,7 @@ int main() {
       fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
       for (int k = 0; k < nRestrics; k++){
         fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
-        printf("%s %c= %f\n", rest, restOp[k], restDerArray[k]);
         restricsMatrix[k] = getCoefs(rest, nVar);
-        printCoefs(restricsMatrix[k],nVar);
       }
       tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
     }
