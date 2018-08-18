@@ -444,7 +444,7 @@ int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   for (i = 0; i < nRestrics; i++) {
     a[i]=A[i][entra];
   }
-  //printArray(a,nRestrics,"a");
+  printArray(a,nRestrics,"a");
 
   float *y = matrixArray(Binv,a,nRestrics,nRestrics);
 
@@ -559,7 +559,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     printf("\n");
 
     ////////////TERCERO // Xb y Z //
-    float *Xb = matrixArray(Binv, b, nRestrics, nVar);
+    float *Xb = matrixArray(Binv, b, nRestrics, nRestrics);
 
     //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
@@ -642,7 +642,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema2.txt", "r");
+    file = fopen("problema3.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
