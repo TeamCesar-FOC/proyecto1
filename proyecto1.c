@@ -22,21 +22,24 @@ char* slice(char arr[MAX_ARRAY], int begin, int end) {
 float* getCoefs(char arr[MAX_ARRAY], int nVar){
   float* coefs = (float *)malloc(sizeof(float) * nVar); //Array de int de tamaño nVar
   int short is1stDigit = 1;
+  int short isDecimal = 0;
   int nVarCompleted = 0;
   int i = 0;
   int posIni = -1;
   int posFin = -1;
+  int posIniDecimal = -1;
+  int posFinDecimal = -1;
   char oper = 'n';
 
   while (arr[i] != '\0') {
     if (is1stDigit && isdigit(arr[i])) {
-      if (nVarCompleted == 0) {
+      if (nVarCompleted == 0 && !isDecimal) {
         is1stDigit = 0;
         posIni = i;
         if (oper == 'n') {
           oper = '+';
         }
-      } else if (oper != 'n') {
+      } else if (oper != 'n' && !isDecimal) {
         is1stDigit = 0;
         posIni = i;
       }
@@ -44,18 +47,64 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       is1stDigit = 0;
       posIni = i;
     } else if (!is1stDigit && !isdigit(arr[i])) {
-      posFin = i;
+      if(arr[i]=='.' || arr[i]==','){
+        isDecimal = 1;
+        posIniDecimal = i+1;
+        is1stDigit = 1;
+      } else {
+        posFin = i;
+      }
     } else if (arr[i] == '+' || arr[i] == '-') {
       oper = arr[i];
     } else if (oper == 'n' && !isdigit(arr[i])) {
       coefs[nVarCompleted] = 1;
       nVarCompleted++;
-    } else if (!isdigit(arr[i])) {
+    } else if (!isdigit(arr[i]) && !isDecimal) {
       coefs[nVarCompleted] = oper == '-' ? -1 : 1;
       nVarCompleted++;
       oper = 'n';
+    } else if (!isdigit(arr[i]) && isDecimal){
+      posFinDecimal = i;
     }
     // Si ya tiene la posicion final e inicial de un coeficiente y su signo, lo extrae
+    if (isDecimal && posIniDecimal >= 0 && posFinDecimal >= 0){
+      char* auxInt = slice(arr, posIni, posIniDecimal-1);
+      int j = 0;
+      int entero = 0;
+      float decimal = 0;
+      float coef = 0;
+      while (auxInt[j] != '\0') {
+        entero = entero * 10;
+        entero = entero + (int)auxInt[j] - '0';
+        j++;
+      }
+      free(auxInt);
+      char* auxDec = slice(arr, posIniDecimal, posFinDecimal);
+      j = 0;
+      while (auxDec[j] != '\0') {
+        j++;
+      }
+      j--;
+      while (j>=0) {
+        decimal = decimal / (float)10;
+        decimal = decimal + (int)auxDec[j] - '0';
+        j--;
+      }
+      decimal = decimal / (float)10;
+      coef = entero + decimal;
+      coef = oper == '+'? coef : coef * -1;
+      coefs[nVarCompleted] = coef;
+      posIni = -1;
+      posFin = -1;
+      oper = 'n';
+      posIniDecimal = -1;
+      posFinDecimal = -1;
+      isDecimal = 0;
+      is1stDigit = 1;
+      nVarCompleted++;
+      free(auxDec);
+
+    }
     if (posIni >= 0 && posFin >= 0 && oper != 'n') {
       char* aux = slice(arr, posIni, posFin);
       int j = 0;
@@ -570,7 +619,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
       printf("\nEntra %c%i\n",entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
-      sale = out(entra,b,A,nRestrics);
+      sale = out(entra,Xb,A,nRestrics);
       printf("Sale %c%i\n",varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
@@ -628,7 +677,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema.txt", "r");
+    file = fopen("problema4.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
@@ -645,7 +694,9 @@ int main() {
       fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
       for (int k = 0; k < nRestrics; k++){
         fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
+        printf("%s %c= %f\n", rest, restOp[k], restDerArray[k]);
         restricsMatrix[k] = getCoefs(rest, nVar);
+        printCoefs(restricsMatrix[k],nVar);
       }
       tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
     }
