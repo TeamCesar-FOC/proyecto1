@@ -461,6 +461,8 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
     }
   }
   printArray(zjMENOScj,nRestrics+nVar,"Zj-Cj");
+
+  free(a);
 }
 
 int in(int tipo,float *zj,int n){
@@ -484,16 +486,28 @@ int in(int tipo,float *zj,int n){
   return result;
 }
 
-int out(int entra,float *b,float **A,int nRestrics){
+int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   int i, result=0;
+  float *a = (float *)malloc(sizeof(float) * nRestrics);
+
+  for (i = 0; i < nRestrics; i++) {
+    a[i]=A[i][entra];
+  }
+  printArray(a,nRestrics,"a");
+
+  float *y = matrixArray(Binv,a,nRestrics,nRestrics);
+
   printf("De tin marin de do pin\n" );
-  printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
+  printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
   for (i = 1; i < nRestrics; i++) {
-    if(b[i]/A[i][entra] < b[result]/A[result][entra]){
+    if(b[i]/y[i] < b[result]/y[result]){
       result = i;
-      printf("%f/%f = %f\n",b[result],A[result][entra],b[result]/A[result][entra]);
+      printf("%f/%f = %f\n",b[result],y[result],b[result]/y[result]);
     }
   }
+  free(a);
+  free(y);
+
   return result;
 }
 
@@ -594,7 +608,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     printf("\n");
 
     ////////////TERCERO // Xb y Z //
-    float *Xb = matrixArray(Binv, b, nRestrics, nVar);
+    float *Xb = matrixArray(Binv, b, nRestrics, nRestrics);
 
     //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
@@ -619,7 +633,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
       printf("\nEntra %c%i\n",entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
-      sale = out(entra,Xb,A,nRestrics);
+      sale = out(entra,Xb,A,Binv,nRestrics);
       printf("Sale %c%i\n",varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
