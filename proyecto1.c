@@ -354,34 +354,9 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   printf("\n");
 }
 
-float** multiplyMatrix(float** matrix1, float** matrix2, int n1, int m2,int l) {
-  float **matrixResult = (float **)malloc(sizeof(float *) * n1);
-  for (int i = 0; i < n1; i++) matrixResult[i] = (float *)malloc(sizeof(float) * m2);
-  //int max = nVar > nRestrics? nVar : nRestrics;
 
-  for (int i = 0; i < n1; i++) {
-		for (int j = 0; j < m2; j++) {
-      matrixResult[i][j] = 0; // Inicializar matriz resultado
-			for (int k = 0; k < l; k++) {
-				matrixResult[i][j] += matrix1[i][k] * matrix2[k][j];
-			}
-		}
-	}
-
-  for (int i = 0; i < n1; i++) {
-    for (int j = 0; j < m2; j++) {
-      printf("%.2f\t", matrixResult[i][j]);
-    }
-    printf("\n");
-  }
-
-  return matrixResult;
-}
-
-float* matrixArray(float** matrix, float* vector, int n1,int l) {
+void matrixArray(float** matrix, float* vector,float *arrayResult, int n1,int l) {
   int i,k;
-  float *arrayResult = (float *)malloc(sizeof(float) * l);
-
 
   for (i = 0; i < n1; i++) {
     arrayResult[i] = 0; // Inicializar vector resultado
@@ -389,8 +364,6 @@ float* matrixArray(float** matrix, float* vector, int n1,int l) {
 			arrayResult[i] += matrix[i][k] * vector[k];
 		}
 	}
-
-  return arrayResult;
 }
 
 float arrayArray(float* vector1, float* vector2, int l) {
@@ -404,26 +377,6 @@ float arrayArray(float* vector1, float* vector2, int l) {
 
   return result;
 }
-
-float** array2matrix(float* array, int len) {
-  int i;
-  float **matrixResult = (float **)malloc(sizeof(float *) * len);
-  for (i = 0; i < len; i++) matrixResult[i] = (float *)malloc(sizeof(float));
-
-  for (i = 0; i < len; i++) {
-    matrixResult[i][0] = array[i];
-  }
-
-  /*
-  for (int i = 0; i < len; i++) {
-    printf("%.2f\t", matrixResult[i][0]);
-  }
-  printf("\n");
-  */
-
-  return matrixResult;
-}
-
 
 void obtenerB(float **matrixA,int *varBasicas,float **matrixB,int nRestrics,int nVar){
   int i,j;
@@ -445,6 +398,7 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
   int i,j;
   //float *y = (float *)malloc(sizeof(float) * nRestrics);
   float *a = (float *)malloc(sizeof(float) * nRestrics);
+  float *y = (float *)malloc(sizeof(float) * nRestrics);
 
   for (i = 0; i < nRestrics+nVar; i++) {
     if(x[i]==0){
@@ -453,7 +407,7 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
       }
       //printArray(a,nRestrics,"a");
 
-      float *y = matrixArray(Binv,a,nRestrics,nRestrics);
+      matrixArray(Binv,a,y,nRestrics,nRestrics);
 
       zjMENOScj[i] = arrayArray(Cb,y,nRestrics) - C[i];
     }else{
@@ -463,6 +417,7 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
   printArray(zjMENOScj,nRestrics+nVar,"Zj-Cj");
 
   free(a);
+  free(y);
 }
 
 int in(int tipo,float *zj,int n){
@@ -489,13 +444,14 @@ int in(int tipo,float *zj,int n){
 int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   int i, result=0;
   float *a = (float *)malloc(sizeof(float) * nRestrics);
+  float *y = (float *)malloc(sizeof(float) * nRestrics);
 
   for (i = 0; i < nRestrics; i++) {
     a[i]=A[i][entra];
   }
   printArray(a,nRestrics,"a");
 
-  float *y = matrixArray(Binv,a,nRestrics,nRestrics);
+  matrixArray(Binv,a,y,nRestrics,nRestrics);
   printf("De tin marin de do pin\n" );
   printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
   for (i = 1; i < nRestrics; i++) {
@@ -533,6 +489,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   float *b = (float *)malloc(sizeof(float) * nRestrics);
   float *C = (float *)malloc(sizeof(float) * nRestrics+nVar);
   float *Cb = (float *)malloc(sizeof(float) * nRestrics);
+  float *Xb = (float *)malloc(sizeof(float) * nRestrics);
   float *zj = (float *)malloc(sizeof(float) * nRestrics+nVar);
 
   int *varBasicas = (int *)malloc(sizeof(int) * nRestrics);
@@ -607,7 +564,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     printf("\n");
 
     ////////////TERCERO // Xb y Z //
-    float *Xb = matrixArray(Binv, b, nRestrics, nRestrics);
+    matrixArray(Binv, b,Xb, nRestrics, nRestrics);
 
     //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
