@@ -605,7 +605,22 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     }
     ////////////SEPTIMO // Regresar a SEGUNDO paso hasta que se cumpla optimizacion
   }while(repite == 1);
+/*
+  free(b);
+  free(C);
+  free(Cb);
+  free(Xb);
+  free(zj);
 
+  free(varBasicas);
+  free(x);
+
+  for(i = 0; i < nRestrics; i++) free(B[i]);
+  free(B);
+  for(i = 0; i < nRestrics; i++) free(Binv[i]);
+  free(Binv);
+  for(i = 0; i < nRestrics; i++) free(A[i]);
+  free(A);*/
 }
 
 /////////////////////////////Cuerpo principal///////////////////////////////////
@@ -647,7 +662,7 @@ int main() {
   if (fromFile == 2) {
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema4.txt", "r");
+    file = fopen("problema3.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
@@ -732,12 +747,12 @@ int main() {
 
 
   // Liberamos memoria dinámica
-  /*for(i = 0; i < nRestrics; i++) free(mult[i]);
-  free(mult);*/
+
   for(i = 0; i < nRestrics; i++) free(inversa[i]);
   free(inversa);
   for(i = 0; i < nRestrics; i++) free(restricsMatrix[i]);
   free(restricsMatrix);
+
   free(restDerArray);
   free(restOp);
   free(fObjetivoCoefsArray);
