@@ -42,7 +42,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       } else if (oper != 'n' && !isDecimal) {
         is1stDigit = 0;
         posIni = i;
-      }
+      } 
     } else if (oper != 'n' && is1stDigit && isdigit(arr[i])) {
       is1stDigit = 0;
       posIni = i;
@@ -56,16 +56,17 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       }
     } else if (arr[i] == '+' || arr[i] == '-') {
       oper = arr[i];
-    } else if (oper == 'n' && !isdigit(arr[i])) {
+    } else if (nVarCompleted ==0 && oper == 'n' && !isdigit(arr[i])) {
       coefs[nVarCompleted] = 1;
       nVarCompleted++;
-    } else if (!isdigit(arr[i]) && !isDecimal) {
+    } else if (!isdigit(arr[i]) && !isDecimal && oper != 'n') {
       coefs[nVarCompleted] = oper == '-' ? -1 : 1;
       nVarCompleted++;
       oper = 'n';
     } else if (!isdigit(arr[i]) && isDecimal){
       posFinDecimal = i;
     }
+
     // Si ya tiene la posicion final e inicial de un coeficiente y su signo, lo extrae
     if (isDecimal && posIniDecimal >= 0 && posFinDecimal >= 0){
       char* auxInt = slice(arr, posIni, posIniDecimal-1);
@@ -108,7 +109,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
     if (posIni >= 0 && posFin >= 0 && oper != 'n') {
       char* aux = slice(arr, posIni, posFin);
       int j = 0;
-      int coef = 0;
+      float coef = 0;
       while (aux[j] != '\0') {
         coef = coef * 10;
         coef = coef + (int)aux[j] - '0';
@@ -123,13 +124,20 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       nVarCompleted++;
       free(aux);
     }
-
-    if(nVarCompleted == nVar){
-      return coefs;
+    /*
+    if(posFin != -1 || oper == 'n' || posFinDecimal != -1) {
+      if (coefWasSaved) {
+        printf("\n");
+        coefWasSaved = 0;
+      }
+      printf("%c", arr[i]);
     }
+    */
     i++;
   }
-
+  
+  //printf("\n");
+  return coefs;
 }
 
 // Recibe el numero de variables y retorna un arreglo con el nombre de cada variable que el programa usará
@@ -142,6 +150,51 @@ char* getVarsArray (int nVar) {
     if(var + i == 'z'){
       var = 'p' - i - 1;
     }
+  }
+  return arrOut;
+}
+
+char** getVars (char arr[MAX_ARRAY], int nVar) {
+  int i,j;
+  char** arrOut = (char **)malloc(sizeof(char *) * nVar);
+  for(i = 0; i < nVar; i++) arrOut[i] = (char *)malloc(sizeof(char) * 20);
+
+  for (i = 0; i < nVar; i++) {
+    for (j = 0; j < 20; j++){
+      arrOut[i][j] = '\0';
+    }
+  }
+
+  i = 0;
+  int nVarCompleted = 0;
+  int posIni = -1;
+  int posFin = -1;
+  int short primero = 1;
+
+  while (arr[i] != '\0') {
+    if (primero) {
+      if(!isdigit(arr[i]) && arr[i] != '-'){
+        posIni = i;
+      }
+      primero = 0;
+    } else if (posIni != -1) {
+      if(arr[i] == '+' || arr[i] == '-') {
+        posFin = i;
+      } else if (arr[i+1] == '\0') {
+        posFin = i+1;
+      }
+    } else if (!isdigit(arr[i]) && arr[i] != ',' && arr[i] != '.') {
+      posIni = i;
+    } 
+
+    if (posIni >= 0 && posFin >= 0 && nVarCompleted < nVar) {
+      arrOut[nVarCompleted] = slice(arr, posIni, posFin); 
+      printf("%s\n", arrOut[nVarCompleted]);
+      nVarCompleted++;
+      posIni = -1;
+      posFin = -1;
+    }
+    i++;
   }
   return arrOut;
 }
@@ -627,10 +680,11 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
 int main() {
   int nVar,nRestrics,i,j;
   char funcObjetivo[MAX_ARRAY];
+  char confirm;
   int tipo = 0; // Maximizar o minimizar
   float real;
   int fromFile = 0;
-  char* varsArray;
+  char** varsArray;
   float* fObjetivoCoefsArray;
   char* restOp;
   char rest[MAX_ARRAY]; // Restricciones
@@ -638,6 +692,7 @@ int main() {
   // Matriz de coeficientes de las restricciones
   float** restricsMatrix;
   float** inversa;
+INICIO:
   printf("Hola, bienvenido al programa simplex\n");
   printf("1) Ingresar datos por consola.\n");
   printf("2) Cargar datos desde un archivo.\n");
@@ -660,9 +715,25 @@ int main() {
    * NOTA: En las restricciones deben ir explicitas los coeficientes de todas las variables y en el mismo orden.
    */
   if (fromFile == 2) {
+    printf("\nEjemplo del archivo:\n");
+    printf("2 2\n");
+    printf("max 2x+3y\n");
+    printf("5x+6y <= 10\n");
+    printf("2x+0y <= 5\n\n");
+    
+    printf("Explicacion:\n");
+    printf("La primera linea debe contener Numero de Variables y Numero de restricciones (NR), en ese orden.\n");
+    printf("La segunda linea si el problema es de maximizar o minimizar y la funcion objetivo.\n");
+    printf("Las siguientes NR lineas las restricciones, las variables tienen que estar todas en el mismo orden y\n");
+    printf("debe ir explicito el coeficiente aunque sea 0.\n");
+    printf("El nombre del archivo debe ser 'problema.txt'\n\n");
+
+    printf("¿Continuar? s/n ");
+    scanf("%s", &confirm);
+    if (!(confirm == 's' || confirm == 'S')) goto INICIO;
     char line[MAX_ARRAY];
     FILE *file;
-    file = fopen("problema3.txt", "r");
+    file = fopen("problema.txt", "r");
     if (file) {
       char ftipo[4];
       fscanf(file, "%i %i\n", &nVar, &nRestrics);
@@ -674,20 +745,19 @@ int main() {
       inversa = (float **)malloc(sizeof(float *) * nRestrics);
       for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
-      varsArray = getVarsArray(nVar);
       fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
       fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
       for (int k = 0; k < nRestrics; k++){
         fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
         restricsMatrix[k] = getCoefs(rest, nVar);
       }
+      varsArray = getVars(rest, nVar);
       tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
     }
     fclose(file);
   } else {
     printf("Ingrese cantidad de variables en el problema:\n");
     scanf("%i", &nVar);
-    varsArray = getVarsArray(nVar);
 
     printf("Introduzca funcion objetivo (sin espacios).\n");
     scanf("%s", funcObjetivo);
@@ -713,6 +783,7 @@ int main() {
       scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
       restricsMatrix[i] = getCoefs(rest, nVar);
     }
+    varsArray = getVars(rest, nVar);
   }
   // ^ Fin carga de datos ^
 
@@ -756,6 +827,8 @@ int main() {
   free(restDerArray);
   free(restOp);
   free(fObjetivoCoefsArray);
+
+  for(i = 0; i < nVar; i++) free(varsArray[i]);
   free(varsArray);
 
   return 0;
