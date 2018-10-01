@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+
+#define ALERT "\x1b[31m*\x1b[0m"
+#define AZUL "\x1b[36m"
+#define SINCOLOR "\x1b[0m"
 #define MAX_ARRAY 100
 
 // Recibe un arreglo y retorna el subarreglo definido por el intervalo entre begin y end
@@ -42,7 +46,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       } else if (oper != 'n' && !isDecimal) {
         is1stDigit = 0;
         posIni = i;
-      } 
+      }
     } else if (oper != 'n' && is1stDigit && isdigit(arr[i])) {
       is1stDigit = 0;
       posIni = i;
@@ -135,7 +139,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
     */
     i++;
   }
-  
+
   //printf("\n");
   return coefs;
 }
@@ -185,10 +189,10 @@ char** getVars (char arr[MAX_ARRAY], int nVar) {
       }
     } else if (!isdigit(arr[i]) && arr[i] != ',' && arr[i] != '.') {
       posIni = i;
-    } 
+    }
 
     if (posIni >= 0 && posFin >= 0 && nVarCompleted < nVar) {
-      arrOut[nVarCompleted] = slice(arr, posIni, posFin); 
+      arrOut[nVarCompleted] = slice(arr, posIni, posFin);
       printf("%s\n", arrOut[nVarCompleted]);
       nVarCompleted++;
       posIni = -1;
@@ -603,9 +607,9 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   //------Fin Impresion------//
   do{
     printf("\n");
-    printf("--------------------------------------------------\n");
+    printf(AZUL"--------------------------------------------------\n");
     printf("---------------------Tabla %i---------------------\n",tabla);
-    printf("--------------------------------------------------\n");
+    printf("--------------------------------------------------\n"SINCOLOR);
 
 
     ////////////SEGUNDO // inversa de B//
@@ -692,14 +696,26 @@ int main() {
   // Matriz de coeficientes de las restricciones
   float** restricsMatrix;
   float** inversa;
+
+  char line[MAX_ARRAY];
+  char archivo[100] = "problema.txt";
+  FILE *file;
+
 INICIO:
+  printf("\n");
   printf("Hola, bienvenido al programa simplex\n");
-  printf("1) Ingresar datos por consola.\n");
-  printf("2) Cargar datos desde un archivo.\n");
-  scanf("%i", &fromFile);
+  do{
+    printf("1) Ingresar datos por consola.\n");
+    printf("2) Cargar datos desde un archivo.\n");
+      printf(" Ingrese el numero de la opcion: ");
+    scanf("%i", &fromFile);
+    if(fromFile < 1 || fromFile > 2){
+        printf(ALERT"Error, ingrese una opcion valida.%s\n",ALERT);
+    }
+  }while(fromFile < 1 || fromFile > 2);
 
   /* Carga de datos desde archivo:
-   * nombre del archivo es: "problema.txt"
+   * nombre del predefinido: "problema.txt"
    * debe contener:
    *
    * NumVariables NumRestricciones
@@ -714,29 +730,23 @@ INICIO:
    *
    * NOTA: En las restricciones deben ir explicitas los coeficientes de todas las variables y en el mismo orden.
    */
-  if (fromFile == 2) {
-    printf("\nEjemplo del archivo:\n");
-    printf("2 2\n");
-    printf("max 2x+3y\n");
-    printf("5x+6y <= 10\n");
-    printf("2x+0y <= 5\n\n");
-    
-    printf("Explicacion:\n");
-    printf("La primera linea debe contener Numero de Variables y Numero de restricciones (NR), en ese orden.\n");
-    printf("La segunda linea si el problema es de maximizar o minimizar y la funcion objetivo.\n");
-    printf("Las siguientes NR lineas las restricciones, las variables tienen que estar todas en el mismo orden y\n");
-    printf("debe ir explicito el coeficiente aunque sea 0.\n");
-    printf("El nombre del archivo debe ser 'problema.txt'\n\n");
 
-    printf("¿Continuar? s/n ");
-    scanf("%s", &confirm);
-    if (!(confirm == 's' || confirm == 'S')) goto INICIO;
-    char line[MAX_ARRAY];
-    FILE *file;
-    file = fopen("problema.txt", "r");
-    if (file) {
-      char ftipo[4];
-      fscanf(file, "%i %i\n", &nVar, &nRestrics);
+
+  switch (fromFile){
+    case 1:
+      printf("Ingrese cantidad de variables en el problema:\n ");
+      scanf("%i", &nVar);
+
+      printf("Introduzca funcion objetivo (sin espacios).\n ");
+      scanf("%s", funcObjetivo);
+      fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
+
+      TIPO: printf("Seleccione:\n1)Maximizar\n2)Minimizar\n ");
+      scanf("%i", &tipo);
+      if(!(tipo==1 || tipo==2)) goto TIPO;
+
+      printf("Introduzca la cantidad de restricciones del problema:\n ");
+      scanf("%i", &nRestrics);
 
       restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
       restDerArray = (float *)malloc(sizeof(float) * nRestrics);
@@ -745,45 +755,82 @@ INICIO:
       inversa = (float **)malloc(sizeof(float *) * nRestrics);
       for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
-      fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
-      fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
-      for (int k = 0; k < nRestrics; k++){
-        fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
-        restricsMatrix[k] = getCoefs(rest, nVar);
+      printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
+      for(i = 0; i < nRestrics; i++){
+        printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n ", i+1); //coma
+        scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
+        restricsMatrix[i] = getCoefs(rest, nVar);
       }
       varsArray = getVars(rest, nVar);
-      tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
-    }
-    fclose(file);
-  } else {
-    printf("Ingrese cantidad de variables en el problema:\n");
-    scanf("%i", &nVar);
+    break;
+    case 2:
 
-    printf("Introduzca funcion objetivo (sin espacios).\n");
-    scanf("%s", funcObjetivo);
-    fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
+      printf("\nEjemplo del archivo:\n");
+      printf("2 2\n");
+      printf("max 2x+3y\n");
+      printf("5x+6y <= 10\n");
+      printf("2x+0y <= 5\n\n");
 
-    TIPO: printf("Seleccione:\n1)Maximizar\n2)Minimizar\n");
-    scanf("%i", &tipo);
-    if(!(tipo==1 || tipo==2)) goto TIPO;
+      printf("Explicacion:\n");
+      printf("La primera linea debe contener Numero de Variables y Numero de restricciones (NR), en ese orden.\n");
+      printf("La segunda linea si el problema es de maximizar o minimizar y la funcion objetivo.\n");
+      printf("Las siguientes NR lineas las restricciones, las variables tienen que estar todas en el mismo orden y\n");
+      printf("debe ir explicito el coeficiente aunque sea 0.\n");
+      printf("El nombre del archivo predefinido es 'problema.txt'\n\n");
 
-    printf("Introduzca la cantidad de restricciones del problema:\n");
-    scanf("%i", &nRestrics);
+      printf("¿Continuar? s/n ");
+      scanf("%s", &confirm);
+      if (!(confirm == 's' || confirm == 'S')) goto INICIO; //salta a INICIO
 
-    restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
-    restDerArray = (float *)malloc(sizeof(float) * nRestrics);
-    restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
-    for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
-    inversa = (float **)malloc(sizeof(float *) * nRestrics);
-    for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
+      do{
+        printf("1) Cargar archivo predefinido 'problema.txt'\n");
+        printf("2) Cargar archivo con otro nombre.\n ");
+        printf(" Ingrese el numero de la opcion: ");
+        scanf("%i", &fromFile);
 
-    for(i = 0; i < nRestrics; i++){
-      if (i == 0) printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
-      printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n", i+1); //coma
-      scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
-      restricsMatrix[i] = getCoefs(rest, nVar);
-    }
-    varsArray = getVars(rest, nVar);
+        if(fromFile==2){
+          printf(" Ingrese nombre del archivo: ");
+          scanf("%s",archivo);
+
+        }
+        if(fromFile < 1 || fromFile > 2){
+          printf(ALERT"Error, ingrese una opcion valida%s\n",ALERT);
+        }
+      }while(fromFile < 1 || fromFile > 2);
+
+      printf("cargando archivo'%s'\n",archivo);
+      file = fopen(archivo, "r");
+      if (file) {
+        char ftipo[4];
+        fscanf(file, "%i %i\n", &nVar, &nRestrics);
+
+        restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
+        restDerArray = (float *)malloc(sizeof(float) * nRestrics);
+        restricsMatrix = (float **)malloc(sizeof(float *) * nRestrics);
+        for(i = 0; i < nRestrics; i++) restricsMatrix[i] = (float *)malloc(sizeof(float) * nVar);
+        inversa = (float **)malloc(sizeof(float *) * nRestrics);
+        for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
+
+        fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
+        fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
+        for (int k = 0; k < nRestrics; k++){
+          fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
+          restricsMatrix[k] = getCoefs(rest, nVar);
+        }
+        varsArray = getVars(rest, nVar);
+        tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
+
+        fclose(file);
+
+      }else{
+        printf("*Error, no se pudo cargar el archivo*\n");
+        goto INICIO;
+      }
+      break;
+      default:
+        printf("*opcion no valida*\n ");
+        goto INICIO;
+      break;
   }
   // ^ Fin carga de datos ^
 
