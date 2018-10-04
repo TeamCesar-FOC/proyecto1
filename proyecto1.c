@@ -1,13 +1,20 @@
+/*LIBRERIAS*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 
+/*CONSTANTES*/
+#define SINCOLOR "\x1b[0m"
 
 #define ALERT "\x1b[31m*\x1b[0m"
+#define AMARILLO "\x1b[33m"
 #define AZUL "\x1b[36m"
-#define SINCOLOR "\x1b[0m"
+#define ROJO "\x1b[31m"
+#define VERDE "\x1b[32m"
 #define MAX_ARRAY 100
 
+/*PROTOTIPOS*/
 // Recibe un arreglo y retorna el subarreglo definido por el intervalo entre begin y end
 char* slice(char arr[MAX_ARRAY], int begin, int end) {
     int i, j=0;
@@ -471,7 +478,6 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
       zjMENOScj[i]=0;
     }
   }
-  printArray(zjMENOScj,nRestrics+nVar,"Zj-Cj");
 
   free(a);
   free(y);
@@ -480,6 +486,10 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
 int in(int tipo,float *zj,int n){
   int i;
   int result=0;
+  printf("\n---------------------" );
+  printf("\nEvaluando quien entra" );
+  printf("\n---------------------" );
+  printArray(zj,n,"Zj-Cj");
 
   if (tipo == 1) { //identificar si es maximizacion y minimizacion
     for (i = 1; i < n; i++) {
@@ -506,10 +516,13 @@ int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   for (i = 0; i < nRestrics; i++) {
     a[i]=A[i][entra];
   }
+  printf("\n--------------------" );
+  printf("\nEvaluando quien sale" );
+  printf("\n--------------------" );
   printArray(a,nRestrics,"a");
 
   matrixArray(Binv,a,y,nRestrics,nRestrics);
-  printf("De tin marin de do pin\n" );
+  //printf("De tin marin de do pin\n" );
   printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
   for (i = 1; i < nRestrics; i++) {
     if((b[i]/y[i])*(b[i]/y[i]) < (b[result]/y[result])*(b[result]/y[result])){ // Simplemente los multiplico por si mismos para cambiarles el signo si fuera negativo alguno
@@ -643,11 +656,11 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
 
     if(optimo(tipo,zj,nRestrics+nVar)==0){
       entra = in(tipo,zj,nRestrics+nVar);
-      printf("\nEntra %c%i\n",entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
+      printf(VERDE"\nEntra %c%i\n"SINCOLOR,entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
       sale = out(entra,Xb,A,Binv,nRestrics);
-      printf("Sale %c%i\n",varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
+      printf(VERDE"Sale %c%i\n"SINCOLOR,varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
       x[entra] = 1;
@@ -703,7 +716,10 @@ int main() {
 
 INICIO:
   printf("\n");
-  printf("Hola, bienvenido al programa simplex\n");
+  printf(AZUL"|------------------------------------|\n");
+  printf("|Hola, bienvenido al programa simplex|\n");
+  printf("|------------------------------------|\n"SINCOLOR);
+
   do{
     printf("1) Ingresar datos por consola.\n");
     printf("2) Cargar datos desde un archivo.\n");
