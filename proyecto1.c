@@ -8,10 +8,12 @@
 #define SINCOLOR "\x1b[0m"
 
 #define ALERT "\x1b[31m*\x1b[0m"
-#define AMARILLO "\x1b[33m"
-#define AZUL "\x1b[36m"
-#define ROJO "\x1b[31m"
-#define VERDE "\x1b[32m"
+#define AMARILLO "\x1b[0;33m"
+#define AMARILLOB "\x1b[1;33m"
+#define AZUL "\x1b[1;36m"
+#define ROJO "\x1b[1;31m"
+#define VERDE "\x1b[1;32m"
+#define GRIS "\x1b[1;37m"
 #define MAX_ARRAY 100
 
 /*PROTOTIPOS*/
@@ -200,13 +202,20 @@ char** getVars (char arr[MAX_ARRAY], int nVar) {
 
     if (posIni >= 0 && posFin >= 0 && nVarCompleted < nVar) {
       arrOut[nVarCompleted] = slice(arr, posIni, posFin);
-      printf("%s\n", arrOut[nVarCompleted]);
       nVarCompleted++;
       posIni = -1;
       posFin = -1;
     }
     i++;
   }
+  posFin = i;
+  if (posIni >= 0 && posFin >= 0 && nVarCompleted < nVar) {
+    arrOut[nVarCompleted] = slice(arr, posIni, posFin);
+    nVarCompleted++;
+    posIni = -1;
+    posFin = -1;
+    }
+
   return arrOut;
 }
 
@@ -382,20 +391,26 @@ void printArray(float *array, int n, char* mensaje){
   }
   printf(" |\n ");
 }
+void printArrayI(int *array, int n, char* mensaje){
+  int i;
 
-void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo) {
+  printf("\n%s\n",mensaje);
+  for (i = 0;i < n;i++) {
+    printf("| %i",array[i]);
+  }
+  printf(" |\n ");
+}
+
+void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo, char** varsArray) {
   int i,j;
-  char var = 'x';
+  printf(AZUL);
   for(i = 0; i < 8 * (nVar + 2); i++) {
     printf("-");
   }
   printf("\n");
   printf("\t");
   for (i = 0; i < nVar; i++) {  // Imprimir variables de referencia
-    printf("%c\t", var + i );
-    if(var + i == 'z'){
-      var = 'p' - i - 1;
-    }
+    printf("%s\t", varsArray[i]);
   }
   printf("\n");
 
@@ -415,7 +430,7 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   for(i = 0; i < 8 * (nVar + 2); i++) {
     printf("-");
   }
-  printf("\n");
+  printf("\n"SINCOLOR);
 }
 
 
@@ -552,8 +567,8 @@ int optimo(int tipo, float *zj,int n){
   return result;
 }
 
-void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj){
-  int i,j,entra,sale,tabla=1,repite=1;
+void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
+  int i,j,h,k,entra,sale,tabla=1,repite=1;
   float determinante,Z;
 
   float *b = (float *)malloc(sizeof(float) * nRestrics);
@@ -621,7 +636,7 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
   do{
     printf("\n");
     printf(AZUL"--------------------------------------------------\n");
-    printf("---------------------Tabla %i---------------------\n",tabla);
+    printf("--------------------Iteracion %i-------------------\n",tabla);
     printf("--------------------------------------------------\n"SINCOLOR);
 
 
@@ -640,9 +655,13 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
     //el +1 porque el indice empieza en 0, el -(nVar-1) porque las x's terminan en 'x'nVar-1 por el hecho que empiezan con indice 0
     for(i = 0; i<nRestrics; i++){
-      printf("%c%i = %3g\n",varBasicas[i]<nVar?'x':'h',varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1),Xb[i]);
-
+      if(varBasicas[i] < nVar) {
+        printf("%s = %3g\n", varsArray[varBasicas[i]],Xb[i]);
+      } else {
+        printf("h%i = %3g\n", varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1), Xb[i]);
+      }
     }
+
     //printArray(Xb,nRestrics,"Xb");
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
@@ -675,6 +694,52 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     }
     ////////////SEPTIMO // Regresar a SEGUNDO paso hasta que se cumpla optimizacion
   }while(repite == 1);
+
+  // Presentacion final de resultados
+
+  printf(AZUL"\n------------------RESULTADOS------------------\n"SINCOLOR);
+/*
+printArray(b, nRestrics, "b");
+printArray(C, nRestrics+nVar,"c");
+printArray(Cb, nRestrics, "CB");
+printArray(Xb, nRestrics, "Xb");
+printArray(zj, nRestrics+nVar, "zj");
+printArrayI(varBasicas, nRestrics, "vBasics");
+printArrayI(x, nRestrics+nVar,"x");
+*/
+
+printf("\n");
+  printf(AZUL"Variable\tValor(x)\tCosto Reducido(e)\n"SINCOLOR);
+  for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
+    if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
+      printf(AZUL"\nRow\t\tHolgura(h)\tPrecio Dual(y)\n"SINCOLOR);
+      printf(ROJO"Z\t\t%g\t\t"SINCOLOR,Z);
+      printf("1\n");
+    }
+    if (x[i] == 1) {
+      for(k = 0; k < nRestrics; k++) {
+        if(varBasicas[k] == i) break;
+      }
+      if (i < nVar) {
+        printf("%s\t\t%g\t\t0", varsArray[i], Xb[k]);
+      } else {
+        printf("R%i\t\t%g\t\t0", h, Xb[k]);
+        h++;
+      }
+      printf(VERDE"\t(basica)\n"SINCOLOR);
+      j++;
+    } else {
+      if(i < nVar) {
+        printf("%s\t\t0\t\t%g", varsArray[i], zj[i]);
+      } else {
+        printf("R%i\t\t0\t\t%g", h, zj[i]);
+        h++;
+      }
+      printf(VERDE"\t(no basica)\n"SINCOLOR);
+    }
+  }
+
+
 /*
   free(b);
   free(C);
@@ -720,13 +785,13 @@ INICIO:
   printf("|Hola, bienvenido al programa simplex|\n");
   printf("|------------------------------------|\n"SINCOLOR);
 
+  printf("1) Ingresar datos por consola.\n");
+  printf("2) Cargar datos desde un archivo.\n\n");
+  printf(GRIS" Ingrese el numero de la opcion: "SINCOLOR);
   do{
-    printf("1) Ingresar datos por consola.\n");
-    printf("2) Cargar datos desde un archivo.\n");
-      printf(" Ingrese el numero de la opcion: ");
     scanf("%i", &fromFile);
     if(fromFile < 1 || fromFile > 2){
-        printf(ALERT"Error, ingrese una opcion valida.%s\n",ALERT);
+        printf(ROJO"(!)Error, ingrese una opcion valida: %s",SINCOLOR);
     }
   }while(fromFile < 1 || fromFile > 2);
 
@@ -750,18 +815,20 @@ INICIO:
 
   switch (fromFile){
     case 1:
-      printf("Ingrese cantidad de variables en el problema:\n ");
+      printf(GRIS" Ingrese cantidad de variables en el problema: "SINCOLOR);
       scanf("%i", &nVar);
 
-      printf("Introduzca funcion objetivo (sin espacios).\n ");
+      printf(GRIS" Introduzca funcion objetivo (sin espacios): "SINCOLOR);
       scanf("%s", funcObjetivo);
       fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
 
-      TIPO: printf("Seleccione:\n1)Maximizar\n2)Minimizar\n ");
+      do {
+      printf("\n1) Maximizar\n2) Minimizar\n");
+      printf(GRIS"\n Seleccione: "SINCOLOR);
       scanf("%i", &tipo);
-      if(!(tipo==1 || tipo==2)) goto TIPO;
+      } while (!(tipo == 1 || tipo == 2));
 
-      printf("Introduzca la cantidad de restricciones del problema:\n ");
+      printf(GRIS" Introduzca la cantidad de restricciones del problema: "SINCOLOR);
       scanf("%i", &nRestrics);
 
       restOp = (char *)malloc(sizeof(char) * nRestrics);  // Operador de la restricción
@@ -771,9 +838,10 @@ INICIO:
       inversa = (float **)malloc(sizeof(float *) * nRestrics);
       for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
-      printf("Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5\n");
+      printf(AMARILLOB"\n Coloque coeficiente 0 si la variable no aparece. Ej: 2x+0y-5z <= 5"SINCOLOR);
+      printf(AMARILLOB"\n Coloque las variables siempre en el mismo orden de aparicion.\n\n"SINCOLOR);
       for(i = 0; i < nRestrics; i++){
-        printf("Introduzca restriccion %i. Utilice ==, >=, <=:\n ", i+1); //coma
+        printf(GRIS" Introduzca restriccion %i. Utilice ==, >=, <=:\n "SINCOLOR, i+1); //coma
         scanf("%s %c= %f", rest, &restOp[i], &restDerArray[i]);
         restricsMatrix[i] = getCoefs(rest, nVar);
       }
@@ -781,40 +849,40 @@ INICIO:
     break;
     case 2:
 
-      printf("\nEjemplo del archivo:\n");
+      printf(AMARILLOB"\nEjemplo del archivo:\n");
       printf("2 2\n");
       printf("max 2x+3y\n");
       printf("5x+6y <= 10\n");
       printf("2x+0y <= 5\n\n");
 
       printf("Explicacion:\n");
-      printf("La primera linea debe contener Numero de Variables y Numero de restricciones (NR), en ese orden.\n");
-      printf("La segunda linea si el problema es de maximizar o minimizar y la funcion objetivo.\n");
-      printf("Las siguientes NR lineas las restricciones, las variables tienen que estar todas en el mismo orden y\n");
+      printf("*La primera linea debe contener Numero de Variables y Numero de restricciones (NR), en ese orden.\n");
+      printf("*La segunda linea si el problema es de maximizar o minimizar y la funcion objetivo.\n");
+      printf("*Las siguientes NR lineas las restricciones, las variables tienen que estar todas en el mismo orden y ");
       printf("debe ir explicito el coeficiente aunque sea 0.\n");
-      printf("El nombre del archivo predefinido es 'problema.txt'\n\n");
+      printf("*El nombre del archivo predefinido es 'problema.txt'\n\n");
 
-      printf("¿Continuar? s/n ");
+      printf(GRIS"¿Continuar? s/n "SINCOLOR);
       scanf("%s", &confirm);
       if (!(confirm == 's' || confirm == 'S')) goto INICIO; //salta a INICIO
 
+      printf("\n1) Cargar archivo predefinido 'problema.txt'\n");
+      printf("2) Cargar archivo con otro nombre.\n\n");
+      printf(GRIS" Ingrese el numero de la opcion: "SINCOLOR);
       do{
-        printf("1) Cargar archivo predefinido 'problema.txt'\n");
-        printf("2) Cargar archivo con otro nombre.\n ");
-        printf(" Ingrese el numero de la opcion: ");
         scanf("%i", &fromFile);
 
         if(fromFile==2){
-          printf(" Ingrese nombre del archivo: ");
+          printf(GRIS" Ingrese nombre del archivo: "SINCOLOR);
           scanf("%s",archivo);
 
         }
         if(fromFile < 1 || fromFile > 2){
-          printf(ALERT"Error, ingrese una opcion valida%s\n",ALERT);
+          printf(ROJO"(!)Error, ingrese una opcion valida: %s",SINCOLOR);
         }
       }while(fromFile < 1 || fromFile > 2);
 
-      printf("cargando archivo'%s'\n",archivo);
+      printf(AMARILLOB"\n Cargando archivo \"%s\"\n"SINCOLOR,archivo);
       file = fopen(archivo, "r");
       if (file) {
         char ftipo[4];
@@ -839,7 +907,7 @@ INICIO:
         fclose(file);
 
       }else{
-        printf("*Error, no se pudo cargar el archivo*\n");
+        printf(ROJO"(!)Error, no se pudo cargar el archivo\n"SINCOLOR);
         goto INICIO;
       }
       break;
@@ -850,19 +918,19 @@ INICIO:
   }
   // ^ Fin carga de datos ^
 
+
   if (nVar > nRestrics) {
     printf("Este problema no tiene solucion factible. Nro variables mayor al nro restricciones.\n"); //coma
-    return 0;
-  }else{
+  } else {
     //float **arr = array2matrix(restDerArray, nRestrics);
 
     //float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
     // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
     // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
 
-    printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo);
+    printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo, varsArray);
 
-    simplex(tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray);
+    simplex(tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
 
     //invermat(nVar,restricsMatrix,inversa,real);
 
@@ -874,10 +942,13 @@ INICIO:
      * A -> restricsMatrix
      * b -> restDerArray
      */
+
+    // Presentación final del resultado
+
+
   }
 
-  // Convertimos a forma estandar
-
+  
 
 
   // Liberamos memoria dinámica
