@@ -498,13 +498,16 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
   free(y);
 }
 
-int in(int tipo,float *zj,int n){
+int in(char mostrarIter,int tipo,float *zj,int n){
   int i;
   int result=0;
-  printf("\n---------------------" );
-  printf("\nEvaluando quien entra" );
-  printf("\n---------------------" );
-  printArray(zj,n,"Zj-Cj");
+
+  if(mostrarIter=='s'){
+    printf("\n---------------------" );
+    printf("\nEvaluando quien entra" );
+    printf("\n---------------------" );
+    printArray(zj,n,"Zj-Cj");
+  }
 
   if (tipo == 1) { //identificar si es maximizacion y minimizacion
     for (i = 1; i < n; i++) {
@@ -523,7 +526,7 @@ int in(int tipo,float *zj,int n){
   return result;
 }
 
-int out(int entra,float *b,float **A,float **Binv,int nRestrics){
+int out(char mostrarIter,int entra,float *b,float **A,float **Binv,int nRestrics){
   int i, result=0;
   float *a = (float *)malloc(sizeof(float) * nRestrics);
   float *y = (float *)malloc(sizeof(float) * nRestrics);
@@ -531,18 +534,22 @@ int out(int entra,float *b,float **A,float **Binv,int nRestrics){
   for (i = 0; i < nRestrics; i++) {
     a[i]=A[i][entra];
   }
-  printf("\n--------------------" );
-  printf("\nEvaluando quien sale" );
-  printf("\n--------------------" );
-  printArray(a,nRestrics,"a");
+  if(mostrarIter=='s'){
+    printf("\n--------------------" );
+    printf("\nEvaluando quien sale" );
+    printf("\n--------------------" );
+    printArray(a,nRestrics,"a");
 
-  matrixArray(Binv,a,y,nRestrics,nRestrics);
-  //printf("De tin marin de do pin\n" );
-  printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
+    matrixArray(Binv,a,y,nRestrics,nRestrics);
+    //printf("De tin marin de do pin\n" );
+    printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
+  }
   for (i = 1; i < nRestrics; i++) {
     if((b[i]/y[i])*(b[i]/y[i]) < (b[result]/y[result])*(b[result]/y[result])){ // Simplemente los multiplico por si mismos para cambiarles el signo si fuera negativo alguno
       result = i;
-      printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
+      if(mostrarIter=='s'){
+        printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
+      }
     }
   }
   free(y);
@@ -567,9 +574,13 @@ int optimo(int tipo, float *zj,int n){
   return result;
 }
 
-void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
+void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
   int i,j,h,k,entra,sale,tabla=1,repite=1;
   float determinante,Z;
+  char hORe = 'h';
+  if(tipo == 2){
+    hORe = 'e';
+  }
 
   float *b = (float *)malloc(sizeof(float) * nRestrics);
   float *C = (float *)malloc(sizeof(float) * nRestrics+nVar);
@@ -612,41 +623,48 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
 
   //---------fin llenado-----//
   ///////////Imprimir/////////
-  printf("\nb");
-  for (i = 0;i < nRestrics;i++) {
-    printf("| %3g",b[i]);
-    printf(" |\n ");
-  }
+  if(mostrarIter=='s'){
+    printf("\nb");
+    for (i = 0;i < nRestrics;i++) {
+      printf("| %3g",b[i]);
+      printf(" |\n ");
+    }
 
-  printf("\nc");
-  for (i = 0;i < nVar+nRestrics;i++) {
-    printf("| %3g",C[i]);
-  }
-  printf(" |\n ");
-
-  printf("\nA");
-  for (i = 0;i < nRestrics;i++) {
-    printf("|");
-    for (j = 0; j < nVar+nRestrics; j++) {
-      printf(" %3g",A[i][j]);
+    printf("\nc");
+    for (i = 0;i < nVar+nRestrics;i++) {
+      printf("| %3g",C[i]);
     }
     printf(" |\n ");
+
+    printf("\nA");
+    for (i = 0;i < nRestrics;i++) {
+      printf("|");
+      for (j = 0; j < nVar+nRestrics; j++) {
+        printf(" %3g",A[i][j]);
+      }
+      printf(" |\n ");
+    }
   }
   //------Fin Impresion------//
   do{
-    printf("\n");
-    printf(AZUL"--------------------------------------------------\n");
-    printf("--------------------Iteracion %i-------------------\n",tabla);
-    printf("--------------------------------------------------\n"SINCOLOR);
-
+    if(mostrarIter=='s'){
+      printf("\n");
+      printf(AZUL"--------------------------------------------------\n");
+      printf("--------------------Iteracion %i-------------------\n",tabla);
+      printf("--------------------------------------------------\n"SINCOLOR);
+    }
 
     ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
-    printMatrix(B,nRestrics,nRestrics,"B");
+    if(mostrarIter=='s'){
+      printMatrix(B,nRestrics,nRestrics,"B");
+    }
 
     invermat(nRestrics,B,Binv,determinante);
-    printMatrix(Binv,nRestrics,nRestrics,"B inversa");
-    printf("\n");
+    if(mostrarIter=='s'){
+      printMatrix(Binv,nRestrics,nRestrics,"B inversa");
+      printf("\n");
+    }
 
     ////////////TERCERO // Xb y Z //
     matrixArray(Binv, b,Xb, nRestrics, nRestrics);
@@ -654,32 +672,33 @@ void  simplex(int tipo,float** matrix,int nVar,int nRestrics,float* derRest,floa
     //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
     //el +1 porque el indice empieza en 0, el -(nVar-1) porque las x's terminan en 'x'nVar-1 por el hecho que empiezan con indice 0
-    for(i = 0; i<nRestrics; i++){
-      if(varBasicas[i] < nVar) {
-        printf("%s = %3g\n", varsArray[varBasicas[i]],Xb[i]);
-      } else {
-        printf("h%i = %3g\n", varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1), Xb[i]);
+    if(mostrarIter=='s'){
+      for(i = 0; i<nRestrics; i++){
+        if(varBasicas[i] < nVar) {
+          printf("%s = %3g\n", varsArray[varBasicas[i]],Xb[i]);
+        } else {
+          printf("%c%i = %3g\n",hORe, varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1), Xb[i]);
+        }
       }
     }
-
     //printArray(Xb,nRestrics,"Xb");
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
     //printArray(Cb,nRestrics,"Cb");
 
     Z = arrayArray(Cb,Xb,nRestrics);
-    printf("Z = %3g\n",Z);
+    if(mostrarIter=='s')printf("Z = %3g\n",Z);
 
     ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
 
     if(optimo(tipo,zj,nRestrics+nVar)==0){
-      entra = in(tipo,zj,nRestrics+nVar);
-      printf(VERDE"\nEntra %c%i\n"SINCOLOR,entra<nVar?'x':'h',entra<nVar?entra+1:entra-(nVar-1));
+      entra = in(mostrarIter,tipo,zj,nRestrics+nVar);
+      if(mostrarIter=='s')printf(VERDE"\nEntra %c%i\n"SINCOLOR,entra<nVar?'x':hORe,entra<nVar?entra+1:entra-(nVar-1));
 
       ////////////QUINTO // Determinar quien sale //
-      sale = out(entra,Xb,A,Binv,nRestrics);
-      printf(VERDE"Sale %c%i\n"SINCOLOR,varBasicas[sale]<nVar?'x':'h',varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
+      sale = out(mostrarIter,entra,Xb,A,Binv,nRestrics);
+      if(mostrarIter=='s')printf(VERDE"Sale %c%i\n"SINCOLOR,varBasicas[sale]<nVar?'x':hORe,varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
       ////////////SEXTO // una vaina loca descrita
       x[entra] = 1;
@@ -712,7 +731,11 @@ printf("\n");
   printf(AZUL"Variable\tValor(x)\tCosto Reducido(e)\n"SINCOLOR);
   for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
     if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
-      printf(AZUL"\nRow\t\tHolgura(h)\tPrecio Dual(y)\n"SINCOLOR);
+      if(tipo == 1){
+        printf(AZUL"\nRow\t\tHolgura(h)\tPrecio Dual(y)\n"SINCOLOR);
+      }else{
+        printf(AZUL"\nRow\t\tExceso(e)\tPrecio Dual(y)\n"SINCOLOR);
+      }
       printf(ROJO"Z\t\t%g\t\t"SINCOLOR,Z);
       printf("1\n");
     }
@@ -761,7 +784,7 @@ printf("\n");
 /////////////////////////////Cuerpo principal///////////////////////////////////
 int main() {
   int nVar,nRestrics,i,j;
-  char funcObjetivo[MAX_ARRAY];
+  char funcObjetivo[MAX_ARRAY],mostrarIter[1];
   char confirm;
   int tipo = 0; // Maximizar o minimizar
   float real;
@@ -791,7 +814,7 @@ INICIO:
   do{
     scanf("%i", &fromFile);
     if(fromFile < 1 || fromFile > 2){
-        printf(ROJO"(!)Error, ingrese una opcion valida: %s",SINCOLOR);
+        printf(ROJO"(!)Error, ingrese una opcion valida: "SINCOLOR);
     }
   }while(fromFile < 1 || fromFile > 2);
 
@@ -922,6 +945,9 @@ INICIO:
   if (nVar > nRestrics) {
     printf("Este problema no tiene solucion factible. Nro variables mayor al nro restricciones.\n"); //coma
   } else {
+    printf(GRIS"¿Desea mostrar las iteraciones? s/n "SINCOLOR);
+    scanf("%s", mostrarIter);
+
     //float **arr = array2matrix(restDerArray, nRestrics);
 
     //float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
@@ -930,7 +956,7 @@ INICIO:
 
     printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo, varsArray);
 
-    simplex(tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
+    simplex(mostrarIter[0],tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
 
     //invermat(nVar,restricsMatrix,inversa,real);
 
@@ -948,7 +974,7 @@ INICIO:
 
   }
 
-  
+
 
 
   // Liberamos memoria dinámica
