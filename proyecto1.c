@@ -153,20 +153,7 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
   return coefs;
 }
 
-// Recibe el numero de variables y retorna un arreglo con el nombre de cada variable que el programa usará
-char* getVarsArray (int nVar) {
-    int i;
-  char* arrOut = (char *)malloc(sizeof(char) * nVar);
-  char var = 'x';
-  for (i = 0; i < nVar; i++) {
-    arrOut[i] = var + i;
-    if(var + i == 'z'){
-      var = 'p' - i - 1;
-    }
-  }
-  return arrOut;
-}
-
+// Recibe una funcion y el numero de variables, retorna un arreglo de caracteres con los nombres de las variables
 char** getVars (char arr[MAX_ARRAY], int nVar) {
   int i,j;
   char** arrOut = (char **)malloc(sizeof(char *) * nVar);
@@ -382,7 +369,7 @@ void printMatrix(float **matrix, int n, int m, char* mensaje){
     printf(" |\n ");
   }
 }
-
+// Imprime los elementos de una matriz, con un mensaje antes de la matriz
 void printMatriz(float matrix[][MAX_ARRAY ], int n, int m, char* mensaje){
   int i, j;
 
@@ -406,6 +393,7 @@ void printArray(float *array, int n, char* mensaje){
   }
   printf(" |\n ");
 }
+// Imprime los elementos de un arreglo, con un mensaje antes del arreglo (enteros)
 void printArrayI(int *array, int n, char* mensaje){
   int i;
 
@@ -416,6 +404,7 @@ void printArrayI(int *array, int n, char* mensaje){
   printf(" |\n ");
 }
 
+// Imprime todos los datos de un problema
 void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], float* derRest, float* fObj, int tipo, char** varsArray) {
   int i,j;
   printf(AZUL);
@@ -451,7 +440,7 @@ void printProblema(float** matrix, int nVar,int nRestrics, char ops[nRestrics], 
   printf("\n"SINCOLOR);
 }
 
-
+// Multiplica una matriz por un vector y lo guarda en arrayResult
 void matrixArray(float** matrix, float* vector,float *arrayResult, int n1,int l) {
   int i,k;
 
@@ -463,6 +452,7 @@ void matrixArray(float** matrix, float* vector,float *arrayResult, int n1,int l)
 	}
 }
 
+// Multiplica 2 matrices de una dimension (2 arreglos) y retorna el resultado
 float arrayArray(float* vector1, float* vector2, int l) {
   int k;
   float result;
@@ -620,7 +610,7 @@ void imprimirVariable(int j,int nVar,char** varsArray,float* Xb,char hORe){
   }
 }
 
-void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
+void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
   int i,j,j2,h,k,entra,sale,tabla=1,repite=1,noBasica;
   float determinante,Z;
   char hORe = 'h';
@@ -796,17 +786,7 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
   // Presentacion final de resultados
 
   printf(AZUL"\n------------------RESULTADOS------------------\n"SINCOLOR);
-/*
-printArray(b, nRestrics, "b");
-printArray(C, nRestrics+nVar,"c");
-printArray(Cb, nRestrics, "CB");
-printArray(Xb, nRestrics, "Xb");
-printArray(zj, nRestrics+nVar, "zj");
-printArrayI(varBasicas, nRestrics, "vBasics");
-printArrayI(x, nRestrics+nVar,"x");
-*/
-
-printf("\n");
+  printf("\n");
   printf(AZUL"Variable\tValor(x)\tCosto Reducido(e)\n"SINCOLOR);
   for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
     if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
@@ -881,25 +861,7 @@ printf("\n");
       printf("\n");
     }
   }
-
   printf(GRIS"\nGracias por usar nuestro programa Simplex.\n"SINCOLOR);
-
-/*
-  free(b);
-  free(C);
-  free(Cb);
-  free(Xb);
-  free(zj);
-
-  free(varBasicas);
-  free(x);
-
-  for(i = 0; i < nRestrics; i++) free(B[i]);
-  free(B);
-  for(i = 0; i < nRestrics; i++) free(Binv[i]);
-  free(Binv);
-  for(i = 0; i < nRestrics; i++) free(A[i]);
-  free(A);*/
 }
 
 /////////////////////////////Cuerpo principal///////////////////////////////////
