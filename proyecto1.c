@@ -457,6 +457,27 @@ float arrayArray(float* vector1, float* vector2, int l) {
   return result;
 }
 
+void obtenerTabla(float* zj,float** Binv,float** A,float** tablaMatrix,int nRestrics,int nVar){
+  int i,j,k,k2;
+  float temporal;
+
+  for (i = 0; i < nRestrics; i++) {
+    k2=0;
+    for (k = 0; k < nVar+nRestrics; k++) {
+      if(zj[k]!=0){
+        temporal=0;
+        for (j = 0; j < nRestrics; j++) {
+          temporal += Binv[i][j]*A[j][k];
+          tablaMatrix[i][k2]=temporal;
+        }
+        k2++;
+      }
+    }
+  }
+
+
+}
+
 void obtenerB(float **matrixA,int *varBasicas,float **matrixB,int nRestrics,int nVar){
   int i,j;
   for (i = 0; i < nRestrics; i++) {
@@ -574,8 +595,16 @@ int optimo(int tipo, float *zj,int n){
   return result;
 }
 
+void imprimirVariable(int j,int nVar,char** varsArray,float* Xb,char hORe){
+  if(j < nVar) { //imprimir variable
+    printf("%s", varsArray[j]);
+  } else {
+    printf("%c%i",hORe, j-(nVar-1));
+  }
+}
+
 void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
-  int i,j,h,k,entra,sale,tabla=1,repite=1;
+  int i,j,j2,h,k,entra,sale,tabla=1,repite=1,noBasica;
   float determinante,Z;
   char hORe = 'h';
   if(tipo == 2){
@@ -598,6 +627,9 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
   float **A = (float **)malloc(sizeof(float *) * nRestrics+nVar);
   for(i = 0; i < nRestrics+nVar; i++) A[i] = (float *)malloc(sizeof(float) * nRestrics);
 
+  float **tablaMatrix = (float **)malloc(sizeof(float *) * +nVar);
+  for(i = 0; i < nVar; i++) tablaMatrix[i] = (float *)malloc(sizeof(float) * nRestrics);
+
   ///////// PRIMERO llenado  b,A,C//////////////
   for (i = 0;i < nRestrics;i++) {
     x[i]=0;
@@ -605,6 +637,7 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
     b[i]=derRest[i];
     C[i]=fObj[i];
     varBasicas[i]=i+nVar;
+
     for (j = 0; j < nVar; j++) {
       A[i][j]=matrix[i][j];
     }
@@ -653,7 +686,9 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
       printf("--------------------Iteracion %i-------------------\n",tabla);
       printf("--------------------------------------------------\n"SINCOLOR);
     }
-
+    /*if(mostrarIter=='s'){
+      printMatrix(A,nRestrics,nRestrics+nVar,"A");
+    }*/
     ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
     if(mostrarIter=='s'){
@@ -672,25 +707,52 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
     //Si varBasicas[i] es menor al # de Variables quiere decir que es de las variables que aparecian en el problema inicial
     //(una x en este caso/por ahora), sino es de de las que se agregaron (h por ahora, se puede extender para verificar si es 'h' o 'e')
     //el +1 porque el indice empieza en 0, el -(nVar-1) porque las x's terminan en 'x'nVar-1 por el hecho que empiezan con indice 0
-    if(mostrarIter=='s'){
-      for(i = 0; i<nRestrics; i++){
-        if(varBasicas[i] < nVar) {
-          printf("%s = %3g\n", varsArray[varBasicas[i]],Xb[i]);
-        } else {
-          printf("%c%i = %3g\n",hORe, varBasicas[i]<nVar?varBasicas[i]+1:varBasicas[i]-(nVar-1), Xb[i]);
-        }
-      }
-    }
+
     //printArray(Xb,nRestrics,"Xb");
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
     //printArray(Cb,nRestrics,"Cb");
 
     Z = arrayArray(Cb,Xb,nRestrics);
-    if(mostrarIter=='s')printf("Z = %3g\n",Z);
-
     ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
+
+    if(mostrarIter=='s'){
+      obtenerTabla(zj,Binv,A,tablaMatrix,nRestrics,nVar);
+
+      printf("\n--------------------" );
+      printf("\nDiccionario %i", tabla);
+      printf("\n--------------------\n" );
+      for(i = 0; i<nRestrics; i++){
+        imprimirVariable(varBasicas[i],nVar,varsArray,Xb,hORe);
+        printf(" = %3g ",Xb[i]);
+
+        j2=0;
+        for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
+          if (zj[j]!=0){                    //saber cuales son solucion
+            if(tablaMatrix[i][j2]>=0) printf("+"); //si es positivo imprime '+'
+
+            printf("%f",tablaMatrix[i][j2]);        //imprime el coeficiente
+
+            imprimirVariable(j,nVar,varsArray,Xb,hORe);
+            printf(" ");
+            j2++;
+          }
+        }
+        printf("\n");
+      }
+
+      printf("Z = %3g ",Z);
+      for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
+        if (zj[j]!=0){                    //saber cuales son solucion
+          if(zj[j]>=0) printf("+"); //si es positivo imprime '+'
+          printf("%f",zj[j]);        //imprime el coeficiente
+
+          imprimirVariable(j,nVar,varsArray,Xb,hORe);
+          printf(" ");
+        }
+      }
+    }
 
     if(optimo(tipo,zj,nRestrics+nVar)==0){
       entra = in(mostrarIter,tipo,zj,nRestrics+nVar);
@@ -971,11 +1033,7 @@ INICIO:
 
     // Presentación final del resultado
 
-
   }
-
-
-
 
   // Liberamos memoria dinámica
 
