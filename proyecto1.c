@@ -627,8 +627,8 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
   float **A = (float **)malloc(sizeof(float *) * nRestrics+nVar);
   for(i = 0; i < nRestrics+nVar; i++) A[i] = (float *)malloc(sizeof(float) * nRestrics);
 
-  float **tablaMatrix = (float **)malloc(sizeof(float *) * +nVar);
-  for(i = 0; i < nVar; i++) tablaMatrix[i] = (float *)malloc(sizeof(float) * nRestrics);
+  float **tablaMatrix = (float **)malloc(sizeof(float *) * nRestrics+nVar);
+  for(i = 0; i < nRestrics+nVar; i++) tablaMatrix[i] = (float *)malloc(sizeof(float) * nRestrics);
 
   ///////// PRIMERO llenado  b,A,C//////////////
   for (i = 0;i < nRestrics;i++) {
