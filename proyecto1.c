@@ -137,19 +137,8 @@ float* getCoefs(char arr[MAX_ARRAY], int nVar){
       nVarCompleted++;
       free(aux);
     }
-    /*
-    if(posFin != -1 || oper == 'n' || posFinDecimal != -1) {
-      if (coefWasSaved) {
-        printf("\n");
-        coefWasSaved = 0;
-      }
-      printf("%c", arr[i]);
-    }
-    */
     i++;
   }
-
-  //printf("\n");
   return coefs;
 }
 
@@ -316,7 +305,6 @@ void invermat(int n, float **a, float **ainv, float determ) {
 
 			// Esta función implementa la sustitución hacia adelante con la matriz L y los L[i][n]
 			// que produce la rutina anterior
-			//float sum;
 
 			D[0] = L[0][n];
 				for (i = 1; i < n; i++) {
@@ -502,7 +490,6 @@ void obtenerCb(float *vectorC,int *varBasicas,float *Cb,int nRestrics){
 
 void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOScj,int nRestrics,int nVar){
   int i,j;
-  //float *y = (float *)malloc(sizeof(float) * nRestrics);
   float *a = (float *)malloc(sizeof(float) * nRestrics);
   float *y = (float *)malloc(sizeof(float) * nRestrics);
 
@@ -511,7 +498,6 @@ void obtenerZj(float **Binv,float **A,float *Cb, float *C,int *x,float *zjMENOSc
       for (j = 0; j < nRestrics; j++) {
         a[j]=A[j][i];
       }
-      //printArray(a,nRestrics,"a");
 
       matrixArray(Binv,a,y,nRestrics,nRestrics);
 
@@ -569,7 +555,6 @@ int out(char mostrarIter,int entra,float *b,float **A,float **Binv,int nRestrics
   }
   matrixArray(Binv,a,y,nRestrics,nRestrics);
   if(mostrarIter=='s'){
-    //printf("De tin marin de do pin\n" );
     printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
   }
   for (i = 1; i < nRestrics; i++) {
@@ -693,23 +678,9 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
       printf("--------------------Iteracion %i-------------------\n",tabla);
       printf("--------------------------------------------------\n"SINCOLOR);
     }
-    /*if(mostrarIter=='s'){
-      printMatrix(A,nRestrics,nRestrics+nVar,"A");
-    }*/
   ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
-    /*
-    if(mostrarIter=='s'){
-      printMatrix(B,nRestrics,nRestrics,"B");
-    }
-    */
     invermat(nRestrics,B,Binv,determinante);
-    /*
-    if(mostrarIter=='s'){
-      printMatrix(Binv,nRestrics,nRestrics,"B inversa");
-      printf("\n");
-    }
-    */
 
   ////////////TERCERO // Xb y Z //
     matrixArray(Binv, b,Xb, nRestrics, nRestrics);
@@ -787,7 +758,7 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
 
   printf(AZUL"\n------------------RESULTADOS------------------\n"SINCOLOR);
   printf("\n");
-  printf(AZUL"Variable\tValor(x)\tCosto Reducido(e)\n"SINCOLOR);
+  printf(AZUL"Variable\tValor(x)\tCosto Reducido\n"SINCOLOR);
   for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
     if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
       if(tipo == 1){
@@ -803,10 +774,6 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
       while(varBasicas[k] != i && k < nRestrics){
         k++;
       }
-      /* Marilin no le dio clase a uno de mis conpa;eros como puede ver:
-      for(k = 0; k < nRestrics; k++) {
-        if(varBasicas[k] == i) break;
-      }*/
       if (i < nVar) {
         printf("%s\t\t%g\t\t0", varsArray[i], Xb[k]);
       } else {
@@ -1004,13 +971,13 @@ INICIO:
         for(i = 0; i < nRestrics; i++) inversa[i] = (float *)malloc(sizeof(float) * nVar);
 
         fscanf(file, "%3s %s\n", ftipo, funcObjetivo);
+        tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
         fObjetivoCoefsArray = getCoefs(funcObjetivo, nVar);
         for (int k = 0; k < nRestrics; k++){
           fscanf(file, "%s %c= %f\n", rest, &restOp[k], &restDerArray[k]);
           restricsMatrix[k] = getCoefs(rest, nVar);
         }
         varsArray = getVars(rest, nVar);
-        tipo = ftipo[1] == 'i' ? 2 : 1; // m[i]n
 
         fclose(file);
 
@@ -1027,27 +994,10 @@ INICIO:
   // ^ Fin carga de datos ^
 
   printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo, varsArray);
-
-  if (nVar > nRestrics) {
-    printf("Este problema no tiene solucion factible. Nro variables mayor al nro restricciones.\n"); //coma
-  } else {
+  
     printf(GRIS"\n¿Desea mostrar las iteraciones? s/n "SINCOLOR);
     scanf("%s", mostrarIter);
     if(mostrarIter[0] == 'S') mostrarIter[0] = 's';
-
-    //float **arr = array2matrix(restDerArray, nRestrics);
-
-    //float **mult = multiplyMatrix(restricsMatrix, restricsMatrix, nRestrics, nVar,nVar);
-    // ^ Como esta funcion recibe 2 matrices, en caso de usar un array seria:
-    // float **mult = multiplyMatrix(restricsMatrix, array2matrix(restDerArray, nRestrics), nVar, nRestrics);
-
-
-    simplex(mostrarIter[0],tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
-
-    //invermat(nVar,restricsMatrix,inversa,real);
-
-    //printMatrix(inversa,nVar,nVar,"Inversa");
-
 
     /* C -> fObjetivoCoefsArray
      * X -> varsArray
@@ -1055,9 +1005,8 @@ INICIO:
      * b -> restDerArray
      */
 
-    // Presentación final del resultado
-
-  }
+    simplex(mostrarIter[0],tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
+  
 
   // Liberamos memoria dinámica
 
