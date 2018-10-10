@@ -218,6 +218,21 @@ char** getVars (char arr[MAX_ARRAY], int nVar) {
 
   return arrOut;
 }
+void InicializarArchivo(char* archivo){
+  archivo[0]='p';
+  archivo[1]='r';
+  archivo[2]='o';
+  archivo[3]='b';
+  archivo[4]='l';
+  archivo[5]='e';
+  archivo[6]='m';
+  archivo[7]='a';
+  archivo[8]='.';
+  archivo[9]='t';
+  archivo[10]='x';
+  archivo[11]='t';
+
+}
 
 // Recibe un arreglo de coeficientes y los imprime con su respectivo nombre de variable
 void printCoefs(float* coefs, int nVar) {
@@ -477,8 +492,6 @@ void obtenerTabla(float* zj,float** Binv,float** A,float** tablaMatrix,int nRest
       }
     }
   }
-
-
 }
 
 void obtenerB(float **matrixA,int *varBasicas,float **matrixB,int nRestrics,int nVar){
@@ -693,7 +706,7 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
     /*if(mostrarIter=='s'){
       printMatrix(A,nRestrics,nRestrics+nVar,"A");
     }*/
-    ////////////SEGUNDO // inversa de B//
+  ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
     /*
     if(mostrarIter=='s'){
@@ -708,13 +721,13 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
     }
     */
 
-    ////////////TERCERO // Xb y Z //
+  ////////////TERCERO // Xb y Z //
     matrixArray(Binv, b,Xb, nRestrics, nRestrics);
 
     obtenerCb(C,varBasicas,Cb,nRestrics);
 
     Z = arrayArray(Cb,Xb,nRestrics);
-    ////////////CUARTO // Determinar quien entra en la base //
+  ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
 
     if(mostrarIter=='s'){
@@ -758,11 +771,11 @@ void  simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,fl
       entra = in(mostrarIter,tipo,zj,nRestrics+nVar);
       if(mostrarIter=='s')printf(VERDE"\nEntra %c%i\n"SINCOLOR,entra<nVar?'x':hORe,entra<nVar?entra+1:entra-(nVar-1));
 
-      ////////////QUINTO // Determinar quien sale //
+  ////////////QUINTO // Determinar quien sale //
       sale = out(mostrarIter,entra,Xb,A,Binv,nRestrics);
       if(mostrarIter=='s')printf(VERDE"Sale %c%i\n"SINCOLOR,varBasicas[sale]<nVar?'x':hORe,varBasicas[sale]<nVar?varBasicas[sale]+1:varBasicas[sale]-(nVar-1));
 
-      ////////////SEXTO // una vaina loca descrita
+  ////////////SEXTO // marcar quien entra y descartar en que sale
       x[entra] = 1;
       x[varBasicas[sale]] = 0;
 
@@ -806,9 +819,14 @@ printf("\n");
       printf("1\n");
     }
     if (x[i] == 1) {
+      k = 0;
+      while(varBasicas[k] != i && k < nRestrics){
+        k++;
+      }
+      /* Marilin no le dio clase a uno de mis conpa;eros como puede ver:
       for(k = 0; k < nRestrics; k++) {
         if(varBasicas[k] == i) break;
-      }
+      }*/
       if (i < nVar) {
         printf("%s\t\t%g\t\t0", varsArray[i], Xb[k]);
       } else {
@@ -995,13 +1013,15 @@ INICIO:
       printf("\n1) Cargar archivo predefinido 'problema.txt'\n");
       printf("2) Cargar archivo con otro nombre.\n\n");
       printf(GRIS" Ingrese el numero de la opcion: "SINCOLOR);
+
+      InicializarArchivo(archivo);
+
       do{
         scanf("%i", &fromFile);
 
         if(fromFile==2){
           printf(GRIS" Ingrese nombre del archivo: "SINCOLOR);
           scanf("%s",archivo);
-
         }
         if(fromFile < 1 || fromFile > 2){
           printf(ROJO"(!)Error, ingrese una opcion valida: %s",SINCOLOR);
