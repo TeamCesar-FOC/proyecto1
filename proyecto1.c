@@ -1,3 +1,8 @@
+// Programa Simplex, para problemas de programación lineal.
+// Elaborado por:
+// César De la Vega. C.I.: 24.298.295 cdsar626@gmail.com
+// César Nieves. C.I.: 22.552.994 cesar_aramendi@hotmail.com
+
 /*LIBRERIAS*/
 
 #include <stdio.h>
@@ -994,7 +999,10 @@ INICIO:
   // ^ Fin carga de datos ^
 
   printProblema(restricsMatrix,nVar,nRestrics,restOp,restDerArray, fObjetivoCoefsArray, tipo, varsArray);
-  
+
+  if (nVar > nRestrics) {
+    printf(ROJO"Este problema no tiene solucion factible. Nro variables mayor al nro restricciones.\n"SINCOLOR);
+  } else {  
     printf(GRIS"\n¿Desea mostrar las iteraciones? s/n "SINCOLOR);
     scanf("%s", mostrarIter);
     if(mostrarIter[0] == 'S') mostrarIter[0] = 's';
