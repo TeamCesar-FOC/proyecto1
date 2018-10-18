@@ -560,7 +560,7 @@ int out(char mostrarIter,int entra,float *b,float **A,float **Binv,int nRestrics
   }
   matrixArray(Binv,a,y,nRestrics,nRestrics);
   if(mostrarIter=='s'){
-    printf("%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
+    printf("\n%3g/%3g = %3g\n",b[result],y[result],b[result]/y[result]);
   }
   for (i = 1; i < nRestrics; i++) {
     if((b[i]/y[i])*(b[i]/y[i]) < (b[result]/y[result])*(b[result]/y[result])){ // Simplemente los multiplico por si mismos para cambiarles el signo si fuera negativo alguno
@@ -601,7 +601,8 @@ void imprimirVariable(int j,int nVar,char** varsArray,float* Xb,char hORe){
 }
 
 void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,float* derRest,float* fObj, char** varsArray){
-  int i,j,j2,h,k,entra,sale,tabla=1,repite=1,noBasica;
+  int i,j,j2,h,k,entra,sale,tabla=1,repite=1,noBasica,fallo=0;
+  float Zcache[4] = {__FLT32_MIN__, 0, __FLT32_MIN__, 0}; // Para revisar si Z se mantiene entre iteraciones (Infinitas soluciones)
   float determinante,Z;
   char hORe = 'h';
   if(tipo == 2){
@@ -677,12 +678,7 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
   }
   //------Fin Impresion------//
   do{
-    if(mostrarIter=='s'){
-      printf("\n");
-      printf(AZUL"--------------------------------------------------\n");
-      printf("--------------------Iteracion %i-------------------\n",tabla);
-      printf("--------------------------------------------------\n"SINCOLOR);
-    }
+    
   ////////////SEGUNDO // inversa de B//
     obtenerB(A,varBasicas,B,nRestrics,nVar);
     invermat(nRestrics,B,Binv,determinante);
@@ -693,6 +689,36 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
     obtenerCb(C,varBasicas,Cb,nRestrics);
 
     Z = arrayArray(Cb,Xb,nRestrics);
+    // Verifica si Z ya ha tenido esos valores anteriormente
+    if (Z == Zcache[0]) {
+      if (Zcache[1] == 1) {
+        fallo = 1;
+      } else {
+        Zcache[1] = 1;
+      }
+    } else if (Z == Zcache[2]) {
+      if (Zcache[3] == 1) {
+        fallo = 1;
+      } else {
+        Zcache[3] = 1;
+      }
+    } else {
+      Zcache[tabla%2 * 2] = Z; // itera entre las posiciones 0 y 2 de Zcache
+    }
+    
+    if (fallo) {
+      repite = 0;
+      mostrarIter = 0;
+      printf(ROJO"(!)Este problema tiene infinitas soluciones.\n"SINCOLOR);
+    }
+
+    if(mostrarIter=='s'){
+      printf("\n");
+      printf(AZUL"--------------------------------------------------\n");
+      printf("--------------------Iteracion %i-------------------\n",tabla);
+      printf("--------------------------------------------------\n"SINCOLOR);
+    }
+    
   ////////////CUARTO // Determinar quien entra en la base //
     obtenerZj(Binv,A,Cb,C,x,zj,nRestrics,nVar);
 
@@ -760,77 +786,78 @@ void simplex(char mostrarIter,int tipo,float** matrix,int nVar,int nRestrics,flo
   }while(repite == 1);
 
   // Presentacion final de resultados
-
-  printf(AZUL"\n------------------RESULTADOS------------------\n"SINCOLOR);
-  printf("\n");
-  printf(AZUL"Variable\tValor(x)\tCosto Reducido\n"SINCOLOR);
-  for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
-    if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
-      if(tipo == 1){
-        printf(AZUL"\nRow\t\tHolgura(h)\tPrecio Dual(y)\n"SINCOLOR);
-      }else{
-        printf(AZUL"\nRow\t\tExceso(e)\tPrecio Dual(y)\n"SINCOLOR);
+  if (!fallo) {
+    printf(AZUL"\n------------------RESULTADOS------------------\n"SINCOLOR);
+    printf("\n");
+    printf(AZUL"Variable\tValor(x)\tCosto Reducido\n"SINCOLOR);
+    for(i = 0, j = 0, h = 1; i < nRestrics+nVar; i++) {
+      if(i == nVar) { // Si ya termino de imprimir la seccion de variables empieza la seccion de rows
+        if(tipo == 1){
+          printf(AZUL"\nRow\t\tHolgura(h)\tPrecio Dual(y)\n"SINCOLOR);
+        }else{
+          printf(AZUL"\nRow\t\tExceso(e)\tPrecio Dual(y)\n"SINCOLOR);
+        }
+        printf(ROJO"Z\t\t%g\t\t"SINCOLOR,Z);
+        printf("1\n");
       }
-      printf(ROJO"Z\t\t%g\t\t"SINCOLOR,Z);
-      printf("1\n");
-    }
-    if (x[i] == 1) {
-      k = 0;
-      while(varBasicas[k] != i && k < nRestrics){
-        k++;
-      }
-      if (i < nVar) {
-        printf("%s\t\t%g\t\t0", varsArray[i], Xb[k]);
+      if (x[i] == 1) {
+        k = 0;
+        while(varBasicas[k] != i && k < nRestrics){
+          k++;
+        }
+        if (i < nVar) {
+          printf("%s\t\t%g\t\t0", varsArray[i], Xb[k]);
+        } else {
+          printf("R%i\t\t%g\t\t0", h, Xb[k]);
+          h++;
+        }
+        printf(VERDE"\t(basica)\n"SINCOLOR);
+        j++;
       } else {
-        printf("R%i\t\t%g\t\t0", h, Xb[k]);
-        h++;
+        if(i < nVar) {
+          printf("%s\t\t0\t\t%g", varsArray[i], zj[i]);
+        } else {
+          printf("R%i\t\t0\t\t%g", h, zj[i]);
+          h++;
+        }
+        printf(VERDE"\t(no basica)\n"SINCOLOR);
       }
-      printf(VERDE"\t(basica)\n"SINCOLOR);
-      j++;
-    } else {
-      if(i < nVar) {
-        printf("%s\t\t0\t\t%g", varsArray[i], zj[i]);
-      } else {
-        printf("R%i\t\t0\t\t%g", h, zj[i]);
-        h++;
-      }
-      printf(VERDE"\t(no basica)\n"SINCOLOR);
     }
-  }
 
-  if (mostrarIter != 's') {
-    printf(GRIS"\nMostrar el diccionario optimo? s/n "SINCOLOR);
-    scanf(" %c", &mostrarIter);
-    if (mostrarIter == 's' || mostrarIter == 'S'){
-      obtenerTabla(zj,Binv,A,tablaMatrix,nRestrics,nVar);
-      printf(VERDE"\n--------------------" );
-      printf("\nDiccionario Optimo");
-      printf("\n--------------------\n"SINCOLOR);
-      for(i = 0; i<nRestrics; i++){
-        imprimirVariable(varBasicas[i],nVar,varsArray,Xb,hORe);
-        printf(" = %g ",Xb[i]);
-        j2=0;
-        for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
-          if (zj[j]!=0){                    //saber cuales son solucion
-            if(tablaMatrix[i][j2]<0) printf("+"); //si es positivo imprime '+'
-              printf("%g",tablaMatrix[i][j2]*-1);        //imprime el coeficiente
-              imprimirVariable(j,nVar,varsArray,Xb,hORe);
-              printf(" ");
-              j2++;
+    if (mostrarIter != 's') {
+      printf(GRIS"\nMostrar el diccionario optimo? s/n "SINCOLOR);
+      scanf(" %c", &mostrarIter);
+      if (mostrarIter == 's' || mostrarIter == 'S'){
+        obtenerTabla(zj,Binv,A,tablaMatrix,nRestrics,nVar);
+        printf(VERDE"\n--------------------" );
+        printf("\nDiccionario Optimo");
+        printf("\n--------------------\n"SINCOLOR);
+        for(i = 0; i<nRestrics; i++){
+          imprimirVariable(varBasicas[i],nVar,varsArray,Xb,hORe);
+          printf(" = %g ",Xb[i]);
+          j2=0;
+          for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
+            if (zj[j]!=0){                    //saber cuales son solucion
+              if(tablaMatrix[i][j2]<0) printf("+"); //si es positivo imprime '+'
+                printf("%g",tablaMatrix[i][j2]*-1);        //imprime el coeficiente
+                imprimirVariable(j,nVar,varsArray,Xb,hORe);
+                printf(" ");
+                j2++;
+              }
             }
+            printf("\n");
           }
-          printf("\n");
+          printf("Z = %g ",Z);
+          for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
+            if (zj[j]!=0){                    //saber cuales son solucion
+              if(zj[j]<0) printf("+"); //si es positivo imprime '+'
+            printf("%g",zj[j]*-1);        //imprime el coeficiente
+            imprimirVariable(j,nVar,varsArray,Xb,hORe);
+            printf(" ");
+          }
         }
-        printf("Z = %g ",Z);
-        for (j = 0; j < nRestrics+nVar; j++) { //moverse en zj
-          if (zj[j]!=0){                    //saber cuales son solucion
-            if(zj[j]<0) printf("+"); //si es positivo imprime '+'
-          printf("%g",zj[j]*-1);        //imprime el coeficiente
-          imprimirVariable(j,nVar,varsArray,Xb,hORe);
-          printf(" ");
-        }
+        printf("\n");
       }
-      printf("\n");
     }
   }
   printf(GRIS"\nGracias por usar nuestro programa Simplex.\n"SINCOLOR);
@@ -1015,7 +1042,7 @@ INICIO:
 
     simplex(mostrarIter[0],tipo,restricsMatrix,nVar,nRestrics,restDerArray, fObjetivoCoefsArray, varsArray);
   
-
+  }
   // Liberamos memoria dinámica
 
   for(i = 0; i < nRestrics; i++) free(inversa[i]);
